@@ -222,7 +222,7 @@ def render_descriptive_statistics(df, question_types, descriptive_results, langu
                 st.dataframe(distribution_df, use_container_width=True)
                 fig = build_scale_bar_chart(distribution_df, selected_scale, display_mode="percentage", language=language)
                 if fig is not None:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key=f"descriptive_scale_chart::{selected_scale}")
 
     with tab3:
         if not categorical_summary:
@@ -278,7 +278,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
                 key="categorical_display_mode",
             )
             fig = build_categorical_bar_chart(df, column, question_types[column], display_mode=display_mode, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_categorical_chart::{column}::{display_mode}")
         else:
             st.info(t(language, "no_categorical_chart"))
 
@@ -299,7 +299,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
             else:
                 fig = build_scale_bar_chart(distribution_df, column, display_mode=display_mode, language=language)
                 if fig is not None:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key=f"visual_scale_chart::{column}::{display_mode}")
         else:
             st.info(t(language, "no_scale_chart"))
 
@@ -307,7 +307,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
         if numeric_columns:
             column = st.selectbox(t(language, "numeric_variable"), numeric_columns, key="histogram_column")
             fig = build_numeric_histogram(df, column, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_numeric_histogram::{column}")
         else:
             st.info(t(language, "no_numeric_chart"))
 
@@ -320,7 +320,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
             )
             group_column = st.selectbox(t(language, "grouping_variable"), categorical_columns, key="box_group")
             fig = build_grouped_box_plot(df, numeric_column, group_column, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_box_plot::{numeric_column}::{group_column}")
         else:
             st.info(t(language, "boxplot_requirement"))
 
@@ -390,7 +390,7 @@ def render_cross_analysis(df, question_types, language: str):
             language=language,
         )
         if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"cross_chart::{target_col}::{display_mode}::{chart_mode}")
         st.info(result["interpretation"])
 
     return result
