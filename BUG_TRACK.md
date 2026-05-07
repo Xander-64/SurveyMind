@@ -13,7 +13,7 @@
   - src/descriptive_analysis.py
   - app.py
   - src/question_type_detector.py
-- 状态：进行中
+- 状态：已修复（待验证）
 - 负责人：王须弥
 
 ---

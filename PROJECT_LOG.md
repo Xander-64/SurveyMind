@@ -13,9 +13,9 @@
 
 ## 4. 当前状态（实时）
 - GitHub：主分支与部署流程已建立
-- Streamlit：已部署，但真实问卷上传后会在 scale question 统计阶段崩溃
-- 本地运行：应用可启动，真实数据上传仍可能触发报错
-- 稳定性：不稳定
+- Streamlit：已部署，scale question 崩溃已完成代码层修复
+- 本地运行：已通过语法检查与简单混合数据测试
+- 稳定性：代码已修复，等待真实数据测试验证
 
 ## 5. 当前分工
 ### Xander（Owner）
@@ -28,6 +28,10 @@
 
 ## 6. 今日进展（按时间倒序）
 ### 2026-05-07
+- 预测试完成：修复 scale question 处理逻辑，`summarize_scale_questions()` 改为手动计算 `count`、`mean`、`median`、`std`
+- 增加 `"5分"`、`"4分"` 等文本分值提取，空列或无有效数据返回空 `DataFrame`
+- `app.py` 增加 scale summary 展示前 empty 判断，并为 CSV `ParserError` 增加容错读取
+- 当前结果：代码已修复，已通过 `compileall` 与简单混合数据测试，等待第一轮真实问卷上传验证
 - 建立并统一协作文档体系：`PROJECT_LOG.md`、`TASK.md`、`BUG_TRACK.md`
 - 修改文件：`PROJECT_LOG.md`、`TASK.md`、`BUG_TRACK.md`
 - 当前结果：项目状态、任务和 bug 已可统一追踪
