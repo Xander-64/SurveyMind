@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from io import BytesIO
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -45,7 +48,12 @@ def get_demo_data():
 
 @st.cache_data
 def get_uploaded_data(file_bytes: bytes, filename: str):
-    return load_uploaded_dataset(file_bytes, filename)
+    try:
+        return load_uploaded_dataset(file_bytes, filename)
+    except pd.errors.ParserError:
+        if Path(filename).suffix.lower() != ".csv":
+            raise
+        return pd.read_csv(BytesIO(file_bytes), engine="python", on_bad_lines="skip")
 
 
 def load_active_dataset(uploaded_file):
@@ -206,12 +214,15 @@ def render_descriptive_statistics(df, question_types, descriptive_results, langu
                 list(scale_summary.index),
                 key="scale_summary_column",
             )
-            distribution_df = scale_distributions[selected_scale]
-            st.write(f"**{t(language, 'scale_distribution')}**")
-            st.dataframe(distribution_df, use_container_width=True)
-            fig = build_scale_bar_chart(distribution_df, selected_scale, display_mode="percentage", language=language)
-            if fig is not None:
-                st.plotly_chart(fig, use_container_width=True)
+            distribution_df = scale_distributions.get(selected_scale, pd.DataFrame())
+            if distribution_df.empty:
+                st.info(t(language, "no_scale"))
+            else:
+                st.write(f"**{t(language, 'scale_distribution')}**")
+                st.dataframe(distribution_df, use_container_width=True)
+                fig = build_scale_bar_chart(distribution_df, selected_scale, display_mode="percentage", language=language)
+                if fig is not None:
+                    st.plotly_chart(fig, use_container_width=True, key=f"descriptive_scale_chart::{selected_scale}")
 
     with tab3:
         if not categorical_summary:
@@ -235,8 +246,13 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
     st.header(t(language, "section_visualization"))
 
     numeric_columns = [col for col, q_type in question_types.items() if q_type == QUESTION_TYPE_NUMERIC]
-    scale_columns = [col for col, q_type in question_types.items() if q_type == QUESTION_TYPE_SCALE]
-    metric_columns = [col for col, q_type in question_types.items() if q_type in {QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE}]
+    scale_distributions = descriptive_results["scale_distributions"]
+    scale_columns = [
+        col
+        for col, q_type in question_types.items()
+        if q_type == QUESTION_TYPE_SCALE and not scale_distributions.get(col, pd.DataFrame()).empty
+    ]
+    metric_columns = numeric_columns + scale_columns
     categorical_columns = [
         col for col, q_type in question_types.items() if q_type not in {QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE, QUESTION_TYPE_OPEN}
     ]
@@ -262,7 +278,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
                 key="categorical_display_mode",
             )
             fig = build_categorical_bar_chart(df, column, question_types[column], display_mode=display_mode, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_categorical_chart::{column}::{display_mode}")
         else:
             st.info(t(language, "no_categorical_chart"))
 
@@ -277,10 +293,13 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
                 format_func=lambda value: t(language, f"display_{value}"),
                 key="scale_display_mode",
             )
-            distribution_df = descriptive_results["scale_distributions"][column]
-            fig = build_scale_bar_chart(distribution_df, column, display_mode=display_mode, language=language)
-            if fig is not None:
-                st.plotly_chart(fig, use_container_width=True)
+            distribution_df = scale_distributions.get(column, pd.DataFrame())
+            if distribution_df.empty:
+                st.info(t(language, "no_scale_chart"))
+            else:
+                fig = build_scale_bar_chart(distribution_df, column, display_mode=display_mode, language=language)
+                if fig is not None:
+                    st.plotly_chart(fig, use_container_width=True, key=f"visual_scale_chart::{column}::{display_mode}")
         else:
             st.info(t(language, "no_scale_chart"))
 
@@ -288,7 +307,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
         if numeric_columns:
             column = st.selectbox(t(language, "numeric_variable"), numeric_columns, key="histogram_column")
             fig = build_numeric_histogram(df, column, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_numeric_histogram::{column}")
         else:
             st.info(t(language, "no_numeric_chart"))
 
@@ -301,7 +320,7 @@ def render_visualization_explorer(df, question_types, descriptive_results, langu
             )
             group_column = st.selectbox(t(language, "grouping_variable"), categorical_columns, key="box_group")
             fig = build_grouped_box_plot(df, numeric_column, group_column, language=language)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"visual_box_plot::{numeric_column}::{group_column}")
         else:
             st.info(t(language, "boxplot_requirement"))
 
@@ -371,7 +390,7 @@ def render_cross_analysis(df, question_types, language: str):
             language=language,
         )
         if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key=f"cross_chart::{target_col}::{display_mode}::{chart_mode}")
         st.info(result["interpretation"])
 
     return result
@@ -400,7 +419,11 @@ def main():
     language = render_sidebar()
     render_intro(language)
     uploaded_file = render_data_upload(language)
-    df, using_demo = load_active_dataset(uploaded_file)
+    try:
+        df, using_demo = load_active_dataset(uploaded_file)
+    except Exception as exc:
+        st.error(f"Unable to load the uploaded dataset: {exc}")
+        return
 
     if using_demo:
         st.caption(t(language, "using_demo_caption", filename=DEFAULT_DEMO_PATH.name))

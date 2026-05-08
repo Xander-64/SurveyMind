@@ -47,20 +47,46 @@ def interpret_scale_mean(mean_value: float) -> str:
     return "high"
 
 
+def coerce_scale_scores(series: pd.Series) -> pd.Series:
+    """Convert Likert-style responses such as "5分" into numeric scores."""
+    extracted_scores = series.astype("string").str.extract(r"([-+]?\d+(?:\.\d+)?)", expand=False)
+    return pd.to_numeric(extracted_scores, errors="coerce")
+
+
 def summarize_scale_questions(df: pd.DataFrame, question_types: dict[str, str]) -> pd.DataFrame:
     scale_columns = [col for col, q_type in question_types.items() if q_type == QUESTION_TYPE_SCALE]
     if not scale_columns:
         return pd.DataFrame()
 
-    summary = df[scale_columns].describe(percentiles=[0.5]).T
-    summary = summary.rename(columns={"50%": "median"})
-    summary = summary[["count", "mean", "median", "std"]].round(2)
-    summary["interpretation"] = summary["mean"].apply(interpret_scale_mean)
+    rows: list[dict[str, float | str]] = []
+    row_index: list[str] = []
+    for column in scale_columns:
+        cleaned = coerce_scale_scores(df[column]).dropna()
+        if cleaned.empty:
+            continue
+
+        rows.append(
+            {
+                "count": float(cleaned.count()),
+                "mean": cleaned.mean(),
+                "median": cleaned.median(),
+                "std": cleaned.std(),
+                "interpretation": interpret_scale_mean(cleaned.mean()),
+            }
+        )
+        row_index.append(column)
+
+    if not rows:
+        return pd.DataFrame()
+
+    summary = pd.DataFrame(rows, index=row_index)
+    numeric_columns = ["count", "mean", "median", "std"]
+    summary[numeric_columns] = summary[numeric_columns].round(2)
     return summary
 
 
 def summarize_scale_distribution(series: pd.Series) -> pd.DataFrame:
-    cleaned = pd.to_numeric(series.dropna(), errors="coerce").dropna()
+    cleaned = coerce_scale_scores(series).dropna()
     if cleaned.empty:
         return pd.DataFrame(columns=["score", "count", "percentage"])
 
