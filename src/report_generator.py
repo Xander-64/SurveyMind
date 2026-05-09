@@ -209,35 +209,42 @@ def _build_scale_findings(scale_summary: pd.DataFrame, language: str) -> list[st
     if scale_summary.empty:
         return []
 
+    numeric_scale_summary = scale_summary.copy()
+    numeric_scale_summary["mean"] = pd.to_numeric(numeric_scale_summary["mean"], errors="coerce")
+    numeric_scale_summary["median"] = pd.to_numeric(numeric_scale_summary["median"], errors="coerce")
+    numeric_scale_summary = numeric_scale_summary.dropna(subset=["mean", "median"])
+    if numeric_scale_summary.empty:
+        return [_bullet("Insufficient data")]
+
     findings: list[str] = []
-    top_scale_column = scale_summary["mean"].sort_values(ascending=False).index[0]
-    top_scale_level = translate_scale_level(language, scale_summary.loc[top_scale_column, "interpretation"])
+    top_scale_column = numeric_scale_summary["mean"].sort_values(ascending=False).index[0]
+    top_scale_level = translate_scale_level(language, numeric_scale_summary.loc[top_scale_column, "interpretation"])
 
     if language == "en":
         findings.append(
             _bullet(
-                f"`{top_scale_column}` has the highest average among scale questions at {scale_summary.loc[top_scale_column, 'mean']:.2f}, which is {top_scale_level}."
+                f"`{top_scale_column}` has the highest average among scale questions at {numeric_scale_summary.loc[top_scale_column, 'mean']:.2f}, which is {top_scale_level}."
             )
         )
     else:
         findings.append(
             _bullet(
-                f"在量表题中，`{top_scale_column}` 的平均分最高，为 {scale_summary.loc[top_scale_column, 'mean']:.2f}，整体水平为 {top_scale_level}。"
+                f"在量表题中，`{top_scale_column}` 的平均分最高，为 {numeric_scale_summary.loc[top_scale_column, 'mean']:.2f}，整体水平为 {top_scale_level}。"
             )
         )
 
-    for column in scale_summary.index[:3]:
-        level = translate_scale_level(language, scale_summary.loc[column, "interpretation"])
+    for column in numeric_scale_summary.index[:3]:
+        level = translate_scale_level(language, numeric_scale_summary.loc[column, "interpretation"])
         if language == "en":
             findings.append(
                 _bullet(
-                    f"`{column}` has a mean of {scale_summary.loc[column, 'mean']:.2f}, a median of {scale_summary.loc[column, 'median']:.2f}, and an overall interpretation of {level}."
+                    f"`{column}` has a mean of {numeric_scale_summary.loc[column, 'mean']:.2f}, a median of {numeric_scale_summary.loc[column, 'median']:.2f}, and an overall interpretation of {level}."
                 )
             )
         else:
             findings.append(
                 _bullet(
-                    f"`{column}` 的平均分为 {scale_summary.loc[column, 'mean']:.2f}，中位数为 {scale_summary.loc[column, 'median']:.2f}，整体可解释为 {level}。"
+                    f"`{column}` 的平均分为 {numeric_scale_summary.loc[column, 'mean']:.2f}，中位数为 {numeric_scale_summary.loc[column, 'median']:.2f}，整体可解释为 {level}。"
                 )
             )
 
@@ -555,10 +562,14 @@ def _build_recommendations(
 
     if not scale_summary.empty:
         scale_priority = scale_summary.copy()
+        scale_priority["mean"] = pd.to_numeric(scale_priority["mean"], errors="coerce")
+        scale_priority = scale_priority.dropna(subset=["mean"])
         order_map = {"low": 0, "moderate": 1, "high": 2}
         scale_priority["priority"] = scale_priority["interpretation"].map(order_map)
-        best_scale = scale_priority.sort_values(["priority", "mean"]).iloc[0]
-        recommendations.append(_build_scale_recommendation(best_scale.name, best_scale, language))
+        scale_priority = scale_priority.dropna(subset=["priority"])
+        if not scale_priority.empty:
+            best_scale = scale_priority.sort_values(["priority", "mean"]).iloc[0]
+            recommendations.append(_build_scale_recommendation(best_scale.name, best_scale, language))
 
     multiple_choice_columns = [
         column

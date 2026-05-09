@@ -130,6 +130,7 @@ TRANSLATIONS = {
         "scale_level_low": "relatively low",
         "scale_level_moderate": "moderate",
         "scale_level_high": "relatively high",
+        "scale_level_Insufficient data": "Insufficient data",
     },
     "zh-CN": {
         "language_name": "中文",
@@ -243,6 +244,7 @@ TRANSLATIONS = {
         "scale_level_low": "相对较低",
         "scale_level_moderate": "中等",
         "scale_level_high": "相对较高",
+        "scale_level_Insufficient data": "Insufficient data",
     },
 }
 
