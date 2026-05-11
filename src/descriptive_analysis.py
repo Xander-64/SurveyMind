@@ -3,28 +3,30 @@ from __future__ import annotations
 import pandas as pd
 
 from src.question_type_detector import (
-    MULTI_CHOICE_PATTERN,
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
     QUESTION_TYPE_SINGLE,
+    split_multi_choice_response,
 )
+
+
+INSUFFICIENT_DATA_MESSAGE = "Insufficient data"
 
 
 def split_multi_choice_series(series: pd.Series) -> pd.Series:
     """Split delimited multi-select responses into a long-format series."""
-    cleaned = series.dropna().astype(str).str.strip()
-    if cleaned.empty:
+    if series.empty:
         return pd.Series(dtype="object")
 
-    exploded = (
-        cleaned.str.split(MULTI_CHOICE_PATTERN)
-        .explode()
-        .astype(str)
-        .str.strip()
-    )
-    return exploded[exploded != ""]
+    try:
+        exploded = series.apply(split_multi_choice_response).explode()
+    except Exception:
+        return pd.Series(dtype="object")
+
+    cleaned = exploded.dropna().astype(str).str.strip()
+    return cleaned[cleaned != ""]
 
 
 def summarize_numeric_questions(df: pd.DataFrame, question_types: dict[str, str]) -> pd.DataFrame:
@@ -49,39 +51,71 @@ def interpret_scale_mean(mean_value: float) -> str:
 
 def coerce_scale_scores(series: pd.Series) -> pd.Series:
     """Convert Likert-style responses such as "5分" into numeric scores."""
+    numeric_scores = pd.to_numeric(series, errors="coerce")
     extracted_scores = series.astype("string").str.extract(r"([-+]?\d+(?:\.\d+)?)", expand=False)
-    return pd.to_numeric(extracted_scores, errors="coerce")
+    extracted_numeric_scores = pd.to_numeric(extracted_scores, errors="coerce")
+    return numeric_scores.fillna(extracted_numeric_scores)
 
 
 def summarize_scale_questions(df: pd.DataFrame, question_types: dict[str, str]) -> pd.DataFrame:
     scale_columns = [col for col, q_type in question_types.items() if q_type == QUESTION_TYPE_SCALE]
+    summary_columns = ["count", "mean", "median", "std", "interpretation"]
     if not scale_columns:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=summary_columns)
 
-    rows: list[dict[str, float | str]] = []
+    rows: list[dict[str, float | str | int]] = []
     row_index: list[str] = []
     for column in scale_columns:
-        cleaned = coerce_scale_scores(df[column]).dropna()
-        if cleaned.empty:
-            continue
+        try:
+            if column not in df.columns:
+                raise KeyError(column)
 
-        rows.append(
-            {
-                "count": float(cleaned.count()),
-                "mean": cleaned.mean(),
-                "median": cleaned.median(),
-                "std": cleaned.std(),
-                "interpretation": interpret_scale_mean(cleaned.mean()),
-            }
-        )
+            cleaned = coerce_scale_scores(df[column]).dropna()
+            if cleaned.empty:
+                rows.append(
+                    {
+                        "count": 0,
+                        "mean": INSUFFICIENT_DATA_MESSAGE,
+                        "median": INSUFFICIENT_DATA_MESSAGE,
+                        "std": INSUFFICIENT_DATA_MESSAGE,
+                        "interpretation": INSUFFICIENT_DATA_MESSAGE,
+                    }
+                )
+                row_index.append(column)
+                continue
+
+            mean_value = cleaned.mean()
+            median_value = cleaned.median()
+            std_value = cleaned.std()
+
+            rows.append(
+                {
+                    "count": int(cleaned.count()),
+                    "mean": mean_value,
+                    "median": median_value,
+                    "std": INSUFFICIENT_DATA_MESSAGE if pd.isna(std_value) else std_value,
+                    "interpretation": interpret_scale_mean(mean_value),
+                }
+            )
+        except Exception:
+            rows.append(
+                {
+                    "count": 0,
+                    "mean": INSUFFICIENT_DATA_MESSAGE,
+                    "median": INSUFFICIENT_DATA_MESSAGE,
+                    "std": INSUFFICIENT_DATA_MESSAGE,
+                    "interpretation": INSUFFICIENT_DATA_MESSAGE,
+                }
+            )
         row_index.append(column)
 
     if not rows:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=summary_columns)
 
-    summary = pd.DataFrame(rows, index=row_index)
+    summary = pd.DataFrame(rows, index=row_index, columns=summary_columns)
     numeric_columns = ["count", "mean", "median", "std"]
-    summary[numeric_columns] = summary[numeric_columns].round(2)
+    for column in numeric_columns:
+        summary[column] = summary[column].map(lambda value: round(value, 2) if isinstance(value, (int, float)) else value)
     return summary
 
 

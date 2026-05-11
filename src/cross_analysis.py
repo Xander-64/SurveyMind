@@ -4,11 +4,11 @@ import pandas as pd
 
 from src.i18n import t
 from src.question_type_detector import (
-    MULTI_CHOICE_PATTERN,
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
+    split_multi_choice_response,
 )
 
 
@@ -18,8 +18,20 @@ def analyze_numeric_by_group(
     target_col: str,
     language: str = "en",
 ) -> dict[str, object]:
+    working = df[[group_col, target_col]].copy()
+    numeric_target = pd.to_numeric(working[target_col], errors="coerce").astype("Float64")
+    missing_numeric = numeric_target.isna()
+    if missing_numeric.any():
+        extracted_scores = (
+            working.loc[missing_numeric, target_col]
+            .astype("string")
+            .str.extract(r"^\s*([-+]?\d+(?:\.\d+)?)\s*分?\s*$", expand=False)
+        )
+        numeric_target.loc[missing_numeric] = pd.to_numeric(extracted_scores, errors="coerce").astype("Float64")
+    working[target_col] = numeric_target
+
     grouped = (
-        df[[group_col, target_col]]
+        working
         .dropna()
         .groupby(group_col)[target_col]
         .agg(["count", "mean", "median", "std"])
@@ -65,12 +77,13 @@ def analyze_categorical_relationship(
     working = df[[group_col, target_col]].dropna().copy()
 
     if question_types.get(group_col) == QUESTION_TYPE_MULTIPLE:
-        working[group_col] = working[group_col].astype(str).str.split(MULTI_CHOICE_PATTERN)
+        working[group_col] = working[group_col].apply(split_multi_choice_response)
         working = working.explode(group_col)
     if question_types.get(target_col) == QUESTION_TYPE_MULTIPLE:
-        working[target_col] = working[target_col].astype(str).str.split(MULTI_CHOICE_PATTERN)
+        working[target_col] = working[target_col].apply(split_multi_choice_response)
         working = working.explode(target_col)
 
+    working = working.dropna(subset=[group_col, target_col])
     working[group_col] = working[group_col].astype(str).str.strip()
     working[target_col] = working[target_col].astype(str).str.strip()
     working = working[(working[group_col] != "") & (working[target_col] != "")]
