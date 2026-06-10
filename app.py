@@ -19,6 +19,7 @@ from src.i18n import (
     translate_question_type,
     translate_scale_level,
 )
+from src.llm_client import ask_local_llm
 from src.question_type_detector import (
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
@@ -27,7 +28,7 @@ from src.question_type_detector import (
     get_question_type_options,
     question_types_to_frame,
 )
-from src.report_generator import generate_markdown_report
+from src.report_generator import build_dataset_summary, build_llm_prompt, generate_markdown_report
 from src.visualization import (
     build_categorical_bar_chart,
     build_crosstab_chart,
@@ -44,15 +45,24 @@ st.set_page_config(page_title=t(st.session_state["language"], "page_title"), pag
 
 
 SUPPORTED_UPLOAD_SUFFIXES = {".csv", ".xlsx", ".xls"}
-METADATA_COLUMN_PATTERN = re.compile(r"(?<![A-Z])ID(?![A-Z])", re.IGNORECASE)
 METADATA_COLUMN_KEYWORDS = ("时间", "编号")
+# Split on word separators and camelCase boundaries so that "UserID",
+# "student_id", "Respondent ID" all normalize to a token list containing "id".
+_CAMEL_CASE_BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])")
+_WORD_SEPARATORS = re.compile(r"[\s_\-]+")
+
+
+def _name_tokens(column_name: str) -> list[str]:
+    spaced = _CAMEL_CASE_BOUNDARY.sub(" ", column_name.strip())
+    return [token for token in _WORD_SEPARATORS.split(spaced.lower()) if token]
 
 
 def is_metadata_column(column_name: str) -> bool:
-    stripped_name = column_name.strip()
-    return any(keyword in stripped_name for keyword in METADATA_COLUMN_KEYWORDS) or bool(
-        METADATA_COLUMN_PATTERN.search(stripped_name)
-    )
+    if any(keyword in column_name.strip() for keyword in METADATA_COLUMN_KEYWORDS):
+        return True
+    # Identifier columns (UserID, student_id, RespondentID, ...) carry no survey
+    # signal and should be dropped before analysis.
+    return "id" in _name_tokens(column_name)
 
 
 def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -599,6 +609,19 @@ def render_cross_analysis(df, question_types, language: str):
     return result
 
 
+def is_llm_error_message(message: str) -> bool:
+    if not isinstance(message, str):
+        return False
+    error_prefixes = (
+        "未安装 ollama Python 依赖",
+        "无法连接到本地 Ollama 服务",
+        "本地模型 `",
+        "调用本地 Ollama 模型失败",
+        "本地模型已返回响应，但内容为空",
+    )
+    return message.startswith(error_prefixes)
+
+
 def render_report(df, question_types, descriptive_results, cross_analysis_result, language: str):
     st.header(t(language, "section_report"))
 
@@ -630,6 +653,55 @@ def render_report(df, question_types, descriptive_results, cross_analysis_result
         st.warning("Report display is unavailable.")
         return None
 
+    return report_markdown
+
+
+def render_ai_report(df: pd.DataFrame):
+    st.header("8. AI 问卷分析报告")
+    st.caption("使用本地 Ollama 模型，根据 pandas 已计算好的结构化统计摘要生成中文报告。")
+
+    dataset_signature = (tuple(df.columns), int(len(df)), int(df.isna().sum().sum()))
+    if st.session_state.get("local_ai_report_signature") != dataset_signature:
+        st.session_state["local_ai_report_signature"] = dataset_signature
+        st.session_state.pop("local_ai_report_markdown", None)
+        st.session_state.pop("local_ai_report_model", None)
+
+    model_name = st.selectbox(
+        "选择本地模型",
+        options=["qwen3:4b", "qwen3:8b", "llama3.2:3b"],
+        index=0,
+        key="local_llm_model",
+    )
+
+    if st.button("生成本地 AI 分析报告", key="generate_local_ai_report"):
+        with st.spinner("正在调用本地模型生成报告..."):
+            summary = build_dataset_summary(df)
+            prompt = build_llm_prompt(summary)
+            report_markdown = ask_local_llm(prompt, model=model_name)
+            st.session_state["local_ai_report_markdown"] = report_markdown
+            st.session_state["local_ai_report_model"] = model_name
+
+    report_markdown = st.session_state.get("local_ai_report_markdown", "")
+    report_model = st.session_state.get("local_ai_report_model", model_name)
+    if not isinstance(report_markdown, str) or not report_markdown.strip():
+        return None
+
+    if is_llm_error_message(report_markdown):
+        st.error(report_markdown)
+        st.code("""ollama serve
+ollama list
+ollama pull qwen3:4b""", language="bash")
+        return None
+
+    st.markdown(report_markdown)
+    st.download_button(
+        label="下载 AI Markdown 报告",
+        data=report_markdown,
+        file_name="surveymind_ai_report.md",
+        mime="text/markdown",
+        key="download_local_ai_report",
+    )
+    st.caption(f"当前报告模型：{report_model}")
     return report_markdown
 
 
@@ -681,6 +753,11 @@ def main():
         render_report(df, question_types, descriptive_results, cross_analysis_result, language)
     except Exception:
         st.warning("Report section could not be displayed.")
+
+    try:
+        render_ai_report(df)
+    except Exception:
+        st.warning("AI report section could not be displayed.")
 
 
 if __name__ == "__main__":

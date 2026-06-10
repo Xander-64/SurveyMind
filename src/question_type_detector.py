@@ -11,10 +11,35 @@ QUESTION_TYPE_SCALE = "scale question"
 QUESTION_TYPE_SINGLE = "single-choice question"
 QUESTION_TYPE_MULTIPLE = "multiple-choice question"
 QUESTION_TYPE_OPEN = "open-ended text question"
+QUESTION_TYPE_EMPTY = "empty question"
 
 # Common survey exports often separate multi-select options with punctuation,
 # line breaks, or locale-specific delimiters.
 MULTI_CHOICE_PATTERN = re.compile(r"[,;；，、/\|\n]")
+
+# Column names that strongly suggest a rating / Likert scale. Used to relax the
+# integer-ratio requirement so decimal scores (e.g. 1.1, 2.7) on a 1-5 range are
+# still recognised as scale questions rather than free numeric measurements.
+SCALE_NAME_KEYWORDS = (
+    "satisfaction",
+    "score",
+    "rating",
+    "scale",
+    "likert",
+    "agree",
+    "满意",
+    "评分",
+    "打分",
+    "量表",
+    "评价",
+    "认可",
+)
+
+
+def _column_name_suggests_scale(series: pd.Series) -> bool:
+    """Return True when the column name hints at a rating / Likert scale."""
+    name = str(getattr(series, "name", "") or "").lower()
+    return any(keyword in name for keyword in SCALE_NAME_KEYWORDS)
 
 
 def get_question_type_options() -> list[str]:
@@ -39,6 +64,24 @@ def _is_scale_question(series: pd.Series) -> bool:
     if numeric_values.empty:
         return False
 
+    min_value = numeric_values.min()
+    max_value = numeric_values.max()
+    in_scale_range = (
+        1 <= min_value <= max_value <= 5
+        or 1 <= min_value <= max_value <= 7
+        or 1 <= min_value <= max_value <= 10
+    )
+    if not in_scale_range:
+        return False
+
+    name_suggests_scale = _column_name_suggests_scale(series)
+
+    # Decimal rating columns (e.g. a 1-5 satisfaction score stored as 1.1, 2.7)
+    # have a low integer ratio but are clearly scales. When the column name hints
+    # at a rating we accept the wider 1-10 range without the integer requirement.
+    if name_suggests_scale:
+        return numeric_values.nunique() >= 3
+
     unique_count = numeric_values.nunique()
     if unique_count < 3 or unique_count > 10:
         return False
@@ -46,16 +89,7 @@ def _is_scale_question(series: pd.Series) -> bool:
     # Likert-style items are usually stored as integers even if the column
     # dtype is float because of missing values or spreadsheet imports.
     integer_ratio = ((numeric_values - numeric_values.round()).abs() < 1e-9).mean()
-    if integer_ratio < 0.8:
-        return False
-
-    min_value = numeric_values.min()
-    max_value = numeric_values.max()
-    return (
-        1 <= min_value <= max_value <= 5
-        or 1 <= min_value <= max_value <= 7
-        or 1 <= min_value <= max_value <= 10
-    )
+    return integer_ratio >= 0.8
 
 
 def detect_question_type(series: pd.Series, multi_choice_threshold: float = 0.15) -> str:
@@ -67,9 +101,12 @@ def detect_question_type(series: pd.Series, multi_choice_threshold: float = 0.15
 
     non_null = series.dropna()
     if non_null.empty:
-        return QUESTION_TYPE_SINGLE
+        return QUESTION_TYPE_EMPTY
 
     cleaned = non_null.astype(str).str.strip()
+    cleaned = cleaned[cleaned != ""]
+    if cleaned.empty:
+        return QUESTION_TYPE_EMPTY
     sample_size = len(cleaned)
     unique_count = cleaned.nunique()
     unique_ratio = unique_count / max(sample_size, 1)
@@ -79,8 +116,18 @@ def detect_question_type(series: pd.Series, multi_choice_threshold: float = 0.15
     # Multiple-choice detection is intentionally checked before the
     # single-choice heuristics because many real survey exports store
     # multi-select answers as one delimited string per respondent.
+    #
+    # A genuine multi-select compresses cardinality: a few atomic options
+    # combine into many full-value strings, so splitting on the delimiters
+    # yields *fewer* distinct tokens than distinct full values. Ordinal labels
+    # such as "1-2 times/week" do the opposite (splitting invents fragments like
+    # "week"), so we only treat the column as multiple-choice when splitting does
+    # not increase the distinct count.
     if delimiter_ratio >= multi_choice_threshold:
-        return QUESTION_TYPE_MULTIPLE
+        tokens = cleaned.str.split(MULTI_CHOICE_PATTERN).explode().str.strip()
+        tokens = tokens[tokens != ""]
+        if tokens.nunique() <= unique_count:
+            return QUESTION_TYPE_MULTIPLE
 
     low_cardinality_limit = min(15, max(6, int(sample_size * 0.1)))
     if unique_count <= low_cardinality_limit and average_length < 35:

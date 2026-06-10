@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.descriptive_analysis import coerce_scale_scores
 from src.i18n import t
 from src.question_type_detector import (
     MULTI_CHOICE_PATTERN,
@@ -17,9 +18,20 @@ def analyze_numeric_by_group(
     group_col: str,
     target_col: str,
     language: str = "en",
+    target_type: str | None = None,
 ) -> dict[str, object]:
+    working = df[[group_col, target_col]].copy()
+
+    # Scale questions are often stored as text such as "5分" or "4 points".
+    # Coerce them to numeric scores first so groupby().agg() does not crash on
+    # an object dtype column (see descriptive_analysis.coerce_scale_scores).
+    if target_type == QUESTION_TYPE_SCALE:
+        working[target_col] = coerce_scale_scores(working[target_col])
+    else:
+        working[target_col] = pd.to_numeric(working[target_col], errors="coerce")
+
     grouped = (
-        df[[group_col, target_col]]
+        working
         .dropna()
         .groupby(group_col)[target_col]
         .agg(["count", "mean", "median", "std"])
@@ -126,6 +138,8 @@ def analyze_cross_relationship(
         }
 
     if target_type in {QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE}:
-        return analyze_numeric_by_group(df, group_col, target_col, language=language)
+        return analyze_numeric_by_group(
+            df, group_col, target_col, language=language, target_type=target_type
+        )
 
     return analyze_categorical_relationship(df, group_col, target_col, question_types, language=language)
