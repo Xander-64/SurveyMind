@@ -5,11 +5,11 @@ import pandas as pd
 from src.descriptive_analysis import coerce_scale_scores
 from src.i18n import t
 from src.question_type_detector import (
-    MULTI_CHOICE_PATTERN,
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
+    split_multi_choice_response,
 )
 
 
@@ -22,13 +22,27 @@ def analyze_numeric_by_group(
 ) -> dict[str, object]:
     working = df[[group_col, target_col]].copy()
 
-    # Scale questions are often stored as text such as "5分" or "4 points".
-    # Coerce them to numeric scores first so groupby().agg() does not crash on
-    # an object dtype column (see descriptive_analysis.coerce_scale_scores).
+    # Scale answers are often stored as text ("5分", "4 points") which used to
+    # crash groupby().agg() on an object column. Coerce in stages: plain
+    # numeric first, then strict score-text extraction; scale-typed targets
+    # finally fall back to the tolerant coerce_scale_scores for variants like
+    # "4 points".
+    numeric_target = pd.to_numeric(working[target_col], errors="coerce").astype("Float64")
+    missing_numeric = numeric_target.isna()
+    if missing_numeric.any():
+        extracted_scores = (
+            working.loc[missing_numeric, target_col]
+            .astype("string")
+            .str.extract(r"^\s*([-+]?\d+(?:\.\d+)?)\s*分?\s*$", expand=False)
+        )
+        numeric_target.loc[missing_numeric] = pd.to_numeric(extracted_scores, errors="coerce").astype("Float64")
     if target_type == QUESTION_TYPE_SCALE:
-        working[target_col] = coerce_scale_scores(working[target_col])
-    else:
-        working[target_col] = pd.to_numeric(working[target_col], errors="coerce")
+        still_missing = numeric_target.isna()
+        if still_missing.any():
+            numeric_target.loc[still_missing] = coerce_scale_scores(
+                working.loc[still_missing, target_col]
+            ).astype("Float64")
+    working[target_col] = numeric_target
 
     grouped = (
         working
@@ -77,12 +91,13 @@ def analyze_categorical_relationship(
     working = df[[group_col, target_col]].dropna().copy()
 
     if question_types.get(group_col) == QUESTION_TYPE_MULTIPLE:
-        working[group_col] = working[group_col].astype(str).str.split(MULTI_CHOICE_PATTERN)
+        working[group_col] = working[group_col].apply(split_multi_choice_response)
         working = working.explode(group_col)
     if question_types.get(target_col) == QUESTION_TYPE_MULTIPLE:
-        working[target_col] = working[target_col].astype(str).str.split(MULTI_CHOICE_PATTERN)
+        working[target_col] = working[target_col].apply(split_multi_choice_response)
         working = working.explode(target_col)
 
+    working = working.dropna(subset=[group_col, target_col])
     working[group_col] = working[group_col].astype(str).str.strip()
     working[target_col] = working[target_col].astype(str).str.strip()
     working = working[(working[group_col] != "") & (working[target_col] != "")]

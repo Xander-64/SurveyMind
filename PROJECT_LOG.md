@@ -15,6 +15,7 @@
 - GitHub：主分支与部署流程已建立
 - Streamlit：已部署，第二轮本地测试通过
 - 本地运行：上传测试问卷后页面不崩溃
+- 稳定性：Debug Round 3 最终集成测试通过，系统可进入下一阶段
 - 稳定性：主要 bug 已修复，上传前预处理层已补强
 
 ## 5. 当前分工
@@ -27,6 +28,38 @@
 - 重点检查 `app.py`、`src/descriptive_analysis.py`、`src/question_type_detector.py`
 
 ## 6. 今日进展（按时间倒序）
+### 2026-05-09
+- Debug Round 3 最终验收完成：scale question handling、multiple-choice parsing、question type detection 三项任务均已完成
+- 最终集成测试通过：真实世界 messy dataset 上传与分析流程无崩溃
+- 当前结论：主要题型均可稳定处理，系统状态稳定，可进入下一阶段
+
+### 2026-05-08
+- Task 3 验收测试：使用用户提供的 8 行 CSV 走 Streamlit 上传后渲染路径，页面无 `KeyError`、无 `exception` / `st.error`
+- Task 3 验收识别结果：`满意度=scale question`、`推荐意愿=scale question`、`喜欢的功能=multiple-choice question`、`性别=single-choice question`、`奇怪列=single-choice question`
+- Task 3 元数据处理：`提交时间`、`用户ID`、`空列` 单列检测为 `unknown`，批量检测跳过这些列，不参与后续分析
+- Task 3 稳定性结论：本轮验收未发现误判阻塞项或新增崩溃，可以进入最终验收
+- Task 3 完成：加固题型识别规则，保持简单可解释，不使用 ML 或复杂模型
+- Task 3 检测规则：列名包含 `时间`、`ID`、`编号` 或缺失率达到 80% 及以上时，单列检测返回 `unknown`，批量检测会跳过这些列，避免元数据参与分析
+- Task 3 检测规则：多选题优先识别，至少两条有效回答包含 `;`、`,`、`，`、`、`、换行或短文本空格型多选分隔符时，识别为 `multiple-choice question`
+- Task 3 检测规则：有效值中 60% 及以上可转为数值或 `"5分"` 这类分值文本，且整数型小范围取值不超过 10 个时，识别为 `scale question`
+- Task 3 检测规则：小基数短文本识别为 `single-choice question`；较长且高唯一率文本保留为 `open-ended text question`
+- Task 3 边界测试：覆盖混合数值/文本、纯文本量表、空列、元数据列、异常对象输入，单列检测均返回有效类型或 `unknown`
+- Task 3 渲染测试：使用包含 `提交时间`、`用户ID`、空列、`"5分"` / `"4分"` / `"一般"`、多选题和文本反馈的 CSV 走上传后渲染路径，页面无 `exception` / `st.error`
+- Task 3 关联修复：数值/量表交叉分析前会安全转数值，避免 scale-like object 列在分组均值计算时崩溃
+- Task 2 回归测试：使用用户提供的 10 行多选题 CSV 走 Streamlit 上传后渲染路径，页面无 `exception` / `st.error`
+- Task 2 识别结果：`喜欢的功能` 被识别为 `multiple-choice question`
+- Task 2 统计检查：多选频次为 `图表=7`、`报告=5`、`导出=4`、`空白=1`，真实空单元格未进入频次表
+- Task 2 分隔符检查：`;`、`、`、空格在上传数据中正确拆分；`,` 通过 quoted comma / 函数级校验确认可拆分
+- Task 2 当前结论：多选题解析测试通过，未发现新增崩溃，可进入 Task 3
+- 回归测试：启动 Streamlit app，并使用用户提供的混合量表 CSV 走上传后渲染路径，页面无 `exception` / `st.error`
+- 统计检查：`推荐意愿` 自动识别为量表题，结果为 `mean=4.25`、`median=4.50`、`std=0.96`
+- 覆盖验证：手动将 `满意度评分` 设为量表题后，`"5分"`、`"4分"`、`"3分"` 被纳入统计，空值和 `"满意"` 被忽略，结果为 `mean=4.00`、`median=4.00`、`std=1.00`
+- 当前结论：本次修改解决混合类型量表值导致统计崩溃的问题，未发现新增崩溃；未修改 UI，未新增功能
+- 加固 `summarize_scale_questions()`：使用 `pd.to_numeric(errors="coerce")` 做数值转换，并兼容 `"5分"`、`"4分"` 等文本分值提取
+- 统计前统一 `dropna()`；无有效数值、缺失字段、纯文本量表列会返回 `"Insufficient data"`，不再跳过或崩溃
+- 输出继续包含 `mean`、`median`、`std`；当标准差或整列统计不可计算时，对应字段返回 `"Insufficient data"`
+- 边界情况已覆盖：中文文本回答（如 `"满意"`、`"一般"`）、空字符串、`None`、混合数字/字符串、单个有效数值、缺失列、全无有效数值
+- 测试记录：通过 `compileall`；通过混合量表数据 smoke test；通过全无有效数值量表列的报告生成 smoke test
 ### 2026-05-08
 - 新增输入预处理层：在 `app.py` 的数据加载后、分析前统一清洗 `DataFrame`
 - 处理内容：去除列名首尾空格、将空字符串/空白值标记为缺失、删除全空列
