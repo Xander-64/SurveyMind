@@ -83,6 +83,36 @@ streamlit run app.py
 
 5. 打开终端中显示的本地地址，通常为 `http://localhost:8501`
 
+### 前后端分离模式（FastAPI + 静态前端）
+
+```bash
+# 终端 1 —— 后端 API
+uvicorn backend.main:app --reload --port 8000
+
+# 终端 2 —— 静态前端
+python -m http.server 5500 --directory frontend
+```
+
+然后访问 `http://localhost:5500`。
+
+## AI 报告配置（云端 LLM API）
+
+"AI 智能解读"功能调用云端大模型 API。**API key 只从环境变量读取——绝不硬编码、
+绝不提交到 git**（`.env` 已被 git 忽略）。
+
+克隆项目后需配置你自己的 key：
+
+```bash
+cp .env.example .env
+# 然后编辑 .env，填入你自己的 LLM_API_KEY
+```
+
+默认供应商为 DeepSeek（`https://api.deepseek.com/v1`，模型 `deepseek-chat`）。
+客户端使用 OpenAI 兼容格式，切换供应商（Anthropic Claude、Kimi、智谱 GLM 等）
+只需修改 `.env` 里的 `LLM_BASE_URL` 与 `LLM_MODEL`，代码零改动——详见
+`.env.example` 内的注释。未配置 key 时应用一切正常，AI 按钮会提示如何配置，
+不会报错。
+
 ## 使用示例
 
 假设你正在分析一份关于学生消费、学习行为、服务满意度或校园活动参与情况的问卷。你可以把原始导出的 Excel 或 CSV 文件直接上传到 SurveyMind，然后：

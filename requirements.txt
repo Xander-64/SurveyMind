@@ -5,4 +5,11 @@ plotly
 openpyxl
 xlrd
 scipy
-ollama
+# API backend (front-end/back-end separation)
+fastapi
+uvicorn
+python-multipart
+pyarrow
+# cloud LLM client (AI report)
+httpx
+python-dotenv

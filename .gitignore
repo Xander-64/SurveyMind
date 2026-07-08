@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 .env
 data/dirty_survey_debug.csv
+uploads_tmp/
+.pytest_cache/
