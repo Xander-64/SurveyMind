@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.descriptive_analysis import coerce_scale_scores
 from src.i18n import t
 from src.question_type_detector import (
     QUESTION_TYPE_MULTIPLE,
@@ -17,8 +18,15 @@ def analyze_numeric_by_group(
     group_col: str,
     target_col: str,
     language: str = "en",
+    target_type: str | None = None,
 ) -> dict[str, object]:
     working = df[[group_col, target_col]].copy()
+
+    # Scale answers are often stored as text ("5分", "4 points") which used to
+    # crash groupby().agg() on an object column. Coerce in stages: plain
+    # numeric first, then strict score-text extraction; scale-typed targets
+    # finally fall back to the tolerant coerce_scale_scores for variants like
+    # "4 points".
     numeric_target = pd.to_numeric(working[target_col], errors="coerce").astype("Float64")
     missing_numeric = numeric_target.isna()
     if missing_numeric.any():
@@ -28,6 +36,12 @@ def analyze_numeric_by_group(
             .str.extract(r"^\s*([-+]?\d+(?:\.\d+)?)\s*分?\s*$", expand=False)
         )
         numeric_target.loc[missing_numeric] = pd.to_numeric(extracted_scores, errors="coerce").astype("Float64")
+    if target_type == QUESTION_TYPE_SCALE:
+        still_missing = numeric_target.isna()
+        if still_missing.any():
+            numeric_target.loc[still_missing] = coerce_scale_scores(
+                working.loc[still_missing, target_col]
+            ).astype("Float64")
     working[target_col] = numeric_target
 
     grouped = (
@@ -139,6 +153,8 @@ def analyze_cross_relationship(
         }
 
     if target_type in {QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE}:
-        return analyze_numeric_by_group(df, group_col, target_col, language=language)
+        return analyze_numeric_by_group(
+            df, group_col, target_col, language=language, target_type=target_type
+        )
 
     return analyze_categorical_relationship(df, group_col, target_col, question_types, language=language)

@@ -34,7 +34,11 @@ def summarize_numeric_questions(df: pd.DataFrame, question_types: dict[str, str]
     if not numeric_columns:
         return pd.DataFrame()
 
-    summary = df[numeric_columns].describe(percentiles=[0.25, 0.5, 0.75]).T
+    # Detection accepts numeric-like text columns (e.g. "5分", numbers stored
+    # as strings), so coerce before describing — a raw object column would
+    # yield count/unique/top instead of mean/std and crash the report.
+    numeric_frame = df[numeric_columns].apply(lambda col: pd.to_numeric(col, errors="coerce"))
+    summary = numeric_frame.describe(percentiles=[0.25, 0.5, 0.75]).T
     summary = summary.rename(columns={"50%": "median", "25%": "q1", "75%": "q3"})
     ordered_columns = ["count", "mean", "median", "std", "min", "q1", "q3", "max"]
     return summary[ordered_columns].round(2)

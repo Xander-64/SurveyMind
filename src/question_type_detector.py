@@ -5,19 +5,23 @@ import re
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
+from src.preprocessing import is_metadata_column
+
 
 QUESTION_TYPE_NUMERIC = "numeric question"
 QUESTION_TYPE_SCALE = "scale question"
 QUESTION_TYPE_SINGLE = "single-choice question"
 QUESTION_TYPE_MULTIPLE = "multiple-choice question"
 QUESTION_TYPE_OPEN = "open-ended text question"
+# Entirely blank columns — kept as a visible type ("空白列") for the UI.
+QUESTION_TYPE_EMPTY = "empty question"
+# Metadata / unusable columns — detect_question_types drops these entirely.
 QUESTION_TYPE_UNKNOWN = "unknown"
 
 # Common survey exports often separate multi-select options with punctuation,
 # line breaks, or locale-specific delimiters.
 MULTI_CHOICE_PATTERN = re.compile(r"[,;；，、/\|\s]+")
 EXPLICIT_MULTI_CHOICE_PATTERN = re.compile(r"[,;；，、/\|\n]")
-METADATA_COLUMN_PATTERN = re.compile(r"(时间|编号|id)", re.IGNORECASE)
 MULTI_CHOICE_DELIMITER = ";"
 
 
@@ -46,6 +50,30 @@ def split_multi_choice_response(value: object) -> list[str]:
         return []
     return [part.strip() for part in normalized.split(MULTI_CHOICE_DELIMITER) if part.strip()]
 
+# Column names that strongly suggest a rating / Likert scale. Used to relax the
+# integer-ratio requirement so decimal scores (e.g. 1.1, 2.7) on a 1-5 range are
+# still recognised as scale questions rather than free numeric measurements.
+SCALE_NAME_KEYWORDS = (
+    "satisfaction",
+    "score",
+    "rating",
+    "scale",
+    "likert",
+    "agree",
+    "满意",
+    "评分",
+    "打分",
+    "量表",
+    "评价",
+    "认可",
+)
+
+
+def _column_name_suggests_scale(series: pd.Series) -> bool:
+    """Return True when the column name hints at a rating / Likert scale."""
+    name = str(getattr(series, "name", "") or "").lower()
+    return any(keyword in name for keyword in SCALE_NAME_KEYWORDS)
+
 
 def get_question_type_options() -> list[str]:
     """Return the supported question type labels for UI controls."""
@@ -72,8 +100,12 @@ def _has_multi_choice_delimiter(value: str) -> bool:
 
 
 def _is_metadata_column(column_name: str | None) -> bool:
-    """Identify technical metadata fields that should not drive survey analysis."""
-    return bool(column_name and METADATA_COLUMN_PATTERN.search(str(column_name)))
+    """Identify technical metadata fields that should not drive survey analysis.
+
+    Delegates to the shared token-based check so camelCase IDs ("UserID") are
+    caught while ordinary words containing "id" ("valid", "paid") are not.
+    """
+    return bool(column_name) and is_metadata_column(str(column_name))
 
 
 def _coerce_numeric_like_values(series: pd.Series) -> pd.Series:
@@ -90,6 +122,24 @@ def _is_scale_question(series: pd.Series) -> bool:
     if numeric_values.empty:
         return False
 
+    min_value = numeric_values.min()
+    max_value = numeric_values.max()
+    in_scale_range = (
+        1 <= min_value <= max_value <= 5
+        or 1 <= min_value <= max_value <= 7
+        or 1 <= min_value <= max_value <= 10
+    )
+    if not in_scale_range:
+        return False
+
+    name_suggests_scale = _column_name_suggests_scale(series)
+
+    # Decimal rating columns (e.g. a 1-5 satisfaction score stored as 1.1, 2.7)
+    # have a low integer ratio but are clearly scales. When the column name hints
+    # at a rating we accept the wider 1-10 range without the integer requirement.
+    if name_suggests_scale:
+        return numeric_values.nunique() >= 3
+
     unique_count = numeric_values.nunique()
     if unique_count < 3 or unique_count > 10:
         return False
@@ -97,16 +147,7 @@ def _is_scale_question(series: pd.Series) -> bool:
     # Likert-style items are usually stored as integers even if the column
     # dtype is float because of missing values or spreadsheet imports.
     integer_ratio = ((numeric_values - numeric_values.round()).abs() < 1e-9).mean()
-    if integer_ratio < 0.8:
-        return False
-
-    min_value = numeric_values.min()
-    max_value = numeric_values.max()
-    return (
-        1 <= min_value <= max_value <= 5
-        or 1 <= min_value <= max_value <= 7
-        or 1 <= min_value <= max_value <= 10
-    )
+    return integer_ratio >= 0.8
 
 
 def detect_question_type(
@@ -120,18 +161,18 @@ def detect_question_type(
             return QUESTION_TYPE_UNKNOWN
 
         normalized = series.replace(r"^\s*$", pd.NA, regex=True)
-        missing_ratio = normalized.isna().mean()
-        if missing_ratio >= 0.8:
-            return QUESTION_TYPE_UNKNOWN
-
         non_null = normalized.dropna()
+        # Entirely blank columns keep the dedicated EMPTY type (visible in the
+        # UI); mostly-missing columns are unusable and dropped as UNKNOWN.
         if non_null.empty:
+            return QUESTION_TYPE_EMPTY
+        if normalized.isna().mean() >= 0.8:
             return QUESTION_TYPE_UNKNOWN
 
         cleaned = non_null.astype(str).str.strip()
         cleaned = cleaned[cleaned != ""]
         if cleaned.empty:
-            return QUESTION_TYPE_UNKNOWN
+            return QUESTION_TYPE_EMPTY
 
         sample_size = len(cleaned)
         unique_count = cleaned.nunique()
@@ -143,16 +184,25 @@ def detect_question_type(
 
         # Multiple-choice detection comes first because survey exports often
         # store selected options together in one text cell.
+        #
+        # A genuine multi-select compresses cardinality: a few atomic options
+        # combine into many full-value strings, so splitting on the delimiters
+        # yields *fewer* distinct tokens than distinct full values. Ordinal
+        # labels such as "1-2 times/week" do the opposite (splitting invents
+        # fragments like "week"), so only treat the column as multiple-choice
+        # when splitting does not increase the distinct count.
         if delimiter_count >= 2 and delimiter_ratio >= multi_choice_threshold:
-            return QUESTION_TYPE_MULTIPLE
+            tokens = cleaned.str.split(MULTI_CHOICE_PATTERN).explode().str.strip()
+            tokens = tokens[tokens != ""]
+            if tokens.nunique() <= unique_count:
+                return QUESTION_TYPE_MULTIPLE
 
         numeric_values = _coerce_numeric_like_values(cleaned)
         numeric_ratio = numeric_values.notna().mean()
         if numeric_ratio >= 0.6:
-            numeric_cleaned = numeric_values.dropna()
-            unique_numeric_count = numeric_cleaned.nunique()
-            integer_ratio = ((numeric_cleaned - numeric_cleaned.round()).abs() < 1e-9).mean()
-            if unique_numeric_count <= 10 and integer_ratio >= 0.8:
+            # _is_scale_question owns all scale rules (1-5/1-7/1-10 range,
+            # integer ratio, decimal ratings via column-name keywords, "5分").
+            if _is_scale_question(series):
                 return QUESTION_TYPE_SCALE
             return QUESTION_TYPE_NUMERIC
 

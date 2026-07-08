@@ -1,0 +1,10 @@
+# SurveyMind theme — colors/fonts ported from the Claude Design mockup
+# (design/SurveyMind 数据分析界面.html). Card styling, spacing, and the
+# five question-type badge colors are applied via custom CSS in app.py.
+[theme]
+base = "light"
+primaryColor = "#3E5C99"
+backgroundColor = "#FAFBFC"
+secondaryBackgroundColor = "#F1F4F8"
+textColor = "#1A1F29"
+font = "sans serif"

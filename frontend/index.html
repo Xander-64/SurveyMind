@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurveyMind · 问卷数据分析</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<style>/* latin-ext */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/d394ee39.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/7d730931.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/d394ee39.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/7d730931.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/d394ee39.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/7d730931.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/d394ee39.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Albert Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/7d730931.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/9e2062a8.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/077012f9.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/05b5d165.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/3bcdb3ed.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/2c151329.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/a62fb27b.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/2d74f42b.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/7a45d603.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/f6c8f7d0.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/50089ed7.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/cfe43815.woff2") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/95982920.woff2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/05b88e83.woff2") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/92d9b940.woff2") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/31faa688.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>/* ============================================================
+   SurveyMind · hi-fi stylesheet
+   Restrained data-product aesthetic — blue-grey, light, calm.
+   ============================================================ */
+
+:root{
+  /* surfaces */
+  --bg:#FAFBFC;
+  --surface:#FFFFFF;
+  --surface-2:#F6F8FA;
+  --surface-3:#F1F4F8;
+  --sidebar:#FCFDFE;
+
+  /* hairlines / borders */
+  --line:#EAEDF1;
+  --line-2:#E0E4EA;
+  --line-strong:#D3D9E2;
+
+  /* ink */
+  --ink:#1A1F29;
+  --ink-2:#4A5260;
+  --ink-3:#6B7280;
+  --muted:#8A92A0;
+  --faint:#A9B0BC;
+
+  /* blue-grey accent family */
+  --accent:#3E5C99;
+  --accent-600:#34508A;
+  --accent-700:#2B4475;
+  --accent-soft:#ECF1F9;
+  --accent-soft-2:#E0E9F6;
+  --accent-line:#C2D1EA;
+  --accent-ink:#2F4A82;
+
+  /* type-badge palette (muted, distinct) */
+  --t-num-bg:#E9EFFB;   --t-num-fg:#2F569E;  --t-num-solid:#3E5C99;
+  --t-scale-bg:#E0F0EA; --t-scale-fg:#1C7355; --t-scale-solid:#2A8C6A;
+  --t-single-bg:#ECE8FA;--t-single-fg:#5B45A8;--t-single-solid:#6B54BE;
+  --t-multi-bg:#FBEFD9; --t-multi-fg:#8A5A12; --t-multi-solid:#C68A2E;
+  --t-open-bg:#FAE7EC;  --t-open-fg:#9C4763;  --t-open-solid:#BC5E78;
+
+  /* semantic */
+  --good:#2A8C6A;
+  --warn:#C68A2E;
+  --bad:#C25563;
+
+  /* shadows — soft, low, layered */
+  --sh-sm:0 1px 2px rgba(20,30,50,.04), 0 1px 1px rgba(20,30,50,.03);
+  --sh:0 1px 2px rgba(20,30,50,.04), 0 4px 10px -2px rgba(20,30,50,.05);
+  --sh-md:0 2px 4px rgba(20,30,50,.04), 0 8px 24px -4px rgba(20,30,50,.08);
+  --sh-pop:0 4px 12px rgba(20,30,50,.10), 0 12px 32px -8px rgba(20,30,50,.14);
+
+  /* radii */
+  --r-sm:6px;
+  --r:9px;
+  --r-md:12px;
+  --r-lg:16px;
+
+  --fs:'Albert Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fm:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:var(--fs);
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  font-size:14px;
+  line-height:1.5;
+}
+.mono{font-family:var(--fm);font-feature-settings:"tnum" 1;}
+.tnum{font-feature-settings:"tnum" 1;font-variant-numeric:tabular-nums;}
+::selection{background:var(--accent-soft-2);}
+
+/* lang visibility */
+body[data-lang="en"] .zh{display:none;}
+body[data-lang="zh"] .en{display:none;}
+.en,.zh{}
+
+/* ============ APP SHELL ============ */
+.app{display:flex;flex-direction:column;height:100vh;min-width:1120px;overflow:hidden;}
+
+/* top nav */
+.topnav{
+  display:flex;align-items:center;justify-content:space-between;
+  height:52px;flex:none;padding:0 20px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  z-index:20;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15.5px;letter-spacing:-.015em;color:var(--ink);}
+.brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(155deg,var(--accent) 20%,var(--accent-700));position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.22), var(--sh-sm);}
+.brand .mark::before{content:"";position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:2px;height:9px;
+  background:
+    linear-gradient(var(--m1,#fff) 0 0) 0 100%/3px 5px no-repeat,
+    linear-gradient(var(--m1,#fff) 0 0) 5px 100%/3px 9px no-repeat,
+    linear-gradient(var(--m1,#fff) 0 0) 10px 100%/3px 6px no-repeat;
+  opacity:.92;}
+.brand .sub{font-weight:500;font-size:11.5px;color:var(--faint);margin-left:1px;letter-spacing:0;}
+.nav-right{display:flex;align-items:center;gap:14px;}
+.nav-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.nav-meta .file{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2);color:var(--ink-2);font-weight:500;}
+.nav-meta .file .dot{width:6px;height:6px;border-radius:50%;background:var(--good);}
+.lang{display:flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;font-size:12px;font-weight:600;background:var(--surface-2);}
+.lang button{appearance:none;border:0;background:transparent;font-family:inherit;font-size:12px;font-weight:600;padding:6px 11px;color:var(--muted);cursor:pointer;transition:.12s;}
+.lang button.on{background:var(--accent);color:#fff;}
+
+/* body split */
+.body{display:flex;flex:1;min-height:0;}
+
+/* sidebar */
+.sidebar{width:236px;flex:none;background:var(--sidebar);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;}
+.side-cap{font-size:10.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--faint);font-weight:600;margin:2px 10px 14px;}
+.steps{display:flex;flex-direction:column;gap:2px;position:relative;}
+.step{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--ink-2);transition:.14s;position:relative;text-align:left;border:0;background:transparent;font-family:inherit;width:100%;}
+.step:hover{background:var(--surface-3);}
+.step .num{width:23px;height:23px;flex:none;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--muted);background:var(--surface);transition:.14s;}
+.step .tx{display:flex;flex-direction:column;line-height:1.2;}
+.step .tx b{font-size:13.5px;font-weight:600;letter-spacing:-.005em;}
+.step .tx em{font-style:normal;font-size:11px;color:var(--faint);font-weight:500;}
+.step.done .num{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);}
+.step.current{background:var(--accent-soft);}
+.step.current .num{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 6px -1px rgba(62,92,153,.45);}
+.step.current .tx b{color:var(--accent-ink);}
+.step-rail{position:absolute;left:21px;top:24px;bottom:24px;width:1.5px;background:var(--line);z-index:0;}
+.side-foot{margin-top:auto;padding:13px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);box-shadow:var(--sh-sm);}
+.side-foot .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;margin-bottom:6px;}
+.side-foot .fn{font-size:12.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:7px;}
+.side-foot .meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.side-foot .sample{margin-top:9px;font-size:10.5px;color:var(--accent-ink);background:var(--accent-soft);border-radius:6px;padding:4px 8px;display:inline-block;}
+
+/* main scroll area */
+.main{flex:1;min-width:0;overflow-y:auto;background:var(--bg);}
+.main::-webkit-scrollbar{width:11px;}
+.main::-webkit-scrollbar-thumb{background:#DDE2E9;border-radius:8px;border:3px solid var(--bg);}
+.main::-webkit-scrollbar-thumb:hover{background:#CBD2DC;}
+.screen{display:none;padding:26px 32px 80px;max-width:1240px;}
+.screen.active{display:block;}
+@media (prefers-reduced-motion: no-preference){
+  .screen.active{animation:scrn-in .3s cubic-bezier(.22,.7,.3,1);}
+  @keyframes scrn-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+}
+/* keyboard focus — accessible, on-brand */
+.step:focus-visible,.btn:focus-visible,.sel:focus-visible,.toggle:focus-visible,.lang button:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:8px;
+}
+
+/* page head */
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:22px;}
+.page-head .eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:7px;}
+.page-head h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+.page-head h1 .alt{color:var(--faint);font-weight:500;font-size:16px;margin-left:9px;letter-spacing:-.01em;}
+.page-head p.lede{margin:8px 0 0;font-size:13.5px;color:var(--ink-3);max-width:560px;}
+.head-actions{display:flex;gap:9px;flex:none;padding-top:4px;}
+
+/* buttons */
+.btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.13s;white-space:nowrap;box-shadow:var(--sh-sm);}
+.btn:hover{border-color:var(--line-strong);background:var(--surface-2);color:var(--ink);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(43,68,117,.25),0 4px 10px -3px rgba(43,68,117,.4);}
+.btn.primary:hover{background:var(--accent-600);color:#fff;}
+.btn.ghost{background:transparent;box-shadow:none;border-color:transparent;color:var(--ink-3);}
+.btn.ghost:hover{background:var(--surface-3);border-color:transparent;color:var(--ink);}
+.btn svg{width:15px;height:15px;}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh);}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;border-bottom:1px solid var(--line);}
+.card-h h3{margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px;}
+.card-h h3 .alt{color:var(--faint);font-weight:500;font-size:12px;}
+.card-h .sub{font-size:12px;color:var(--muted);}
+
+/* metric cards */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh);padding:16px 17px;position:relative;overflow:hidden;}
+.metric .k{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:8px;font-weight:500;}
+.metric .k .gi{width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none;}
+.metric .k .gi svg{width:14px;height:14px;}
+.metric .row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:12px;}
+.metric .v{font-size:30px;font-weight:700;letter-spacing:-.025em;line-height:1;color:var(--ink);}
+.metric .v small{font-size:15px;font-weight:600;color:var(--faint);margin-left:1px;}
+.metric .foot{font-size:11.5px;color:var(--muted);margin-top:11px;display:flex;align-items:center;gap:6px;}
+.metric .delta{font-weight:600;}
+.metric .delta.up{color:var(--good);} .metric .delta.down{color:var(--bad);}
+
+/* badges */
+.tb{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:7px;white-space:nowrap;line-height:1.5;}
+.tb .d{width:6px;height:6px;border-radius:50%;flex:none;}
+.tb.num{background:var(--t-num-bg);color:var(--t-num-fg);} .tb.num .d{background:var(--t-num-solid);}
+.tb.scale{background:var(--t-scale-bg);color:var(--t-scale-fg);} .tb.scale .d{background:var(--t-scale-solid);}
+.tb.single{background:var(--t-single-bg);color:var(--t-single-fg);} .tb.single .d{background:var(--t-single-solid);}
+.tb.multi{background:var(--t-multi-bg);color:var(--t-multi-fg);} .tb.multi .d{background:var(--t-multi-solid);}
+.tb.open{background:var(--t-open-bg);color:var(--t-open-fg);} .tb.open .d{background:var(--t-open-solid);}
+
+/* select / dropdown */
+.sel{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line-strong);border-radius:9px;padding:8px 11px;font-size:12.5px;font-weight:500;color:var(--ink-2);background:var(--surface);cursor:pointer;transition:.12s;box-shadow:var(--sh-sm);}
+.sel:hover{border-color:var(--accent-line);background:var(--surface-2);}
+.sel .car{margin-left:auto;color:var(--faint);}
+.sel .car svg{width:13px;height:13px;display:block;}
+.sel.wide{min-width:168px;}
+.sel .lab{color:var(--faint);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+
+/* tables */
+table.dt{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
+table.dt th{text-align:left;font-weight:600;color:var(--ink-3);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;}
+table.dt td{padding:11px 16px;border-bottom:1px solid var(--line);color:var(--ink-2);white-space:nowrap;}
+table.dt tbody tr:last-child td{border-bottom:none;}
+table.dt tbody tr:hover td{background:var(--surface-2);}
+table.dt td.id{color:var(--faint);font-family:var(--fm);font-size:11.5px;}
+table.dt .num-cell{font-variant-numeric:tabular-nums;}
+.null{color:var(--t-open-fg);background:var(--t-open-bg);border-radius:5px;padding:1px 7px;font-size:11px;font-family:var(--fm);}
+.scrollx{overflow-x:auto;border-radius:0 0 var(--r-md) var(--r-md);}
+
+/* chart primitives */
+.bars{display:flex;align-items:flex-end;gap:6px;}
+.bars .b{flex:1;background:linear-gradient(var(--accent-line),#D5E0F0);border-radius:4px 4px 2px 2px;min-width:6px;position:relative;transition:filter .14s, background .14s;}
+.bars .b:hover{filter:saturate(1.3) brightness(.96);}
+.bars .b.hl{background:linear-gradient(var(--accent),var(--accent-600));}
+.bars.solid .b{background:linear-gradient(var(--accent),var(--accent-600));}
+.spark{display:inline-flex;align-items:flex-end;gap:2.5px;height:26px;}
+.spark .b{width:5px;background:var(--accent-line);border-radius:2px;}
+.spark .b.hl{background:var(--accent);}
+.axis{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:8px;font-family:var(--fm);}
+.donut{width:64px;height:64px;border-radius:50%;position:relative;flex:none;}
+.donut::after{content:"";position:absolute;inset:12px;border-radius:50%;background:var(--surface);}
+.donut .lab{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent-ink);z-index:1;}
+
+/* pills / chips */
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line-2);border-radius:20px;padding:5px 12px;font-weight:500;}
+.pill .sw{width:9px;height:9px;border-radius:3px;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+
+/* insight rows */
+.ins{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink-2);line-height:1.5;}
+.ins .ib{width:26px;height:26px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;}
+.ins .ib svg{width:15px;height:15px;}
+.ins.warn .ib{background:var(--t-multi-bg);color:var(--t-multi-fg);}
+.ins.info .ib{background:var(--accent-soft);color:var(--accent);}
+.ins.good .ib{background:var(--t-scale-bg);color:var(--t-scale-fg);}
+.ins b{color:var(--ink);font-weight:600;}
+
+/* significance note strip */
+.sig{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border-top:1px solid var(--line);padding:12px 17px;border-radius:0 0 var(--r-md) var(--r-md);}
+.sig .tag{font-family:var(--fm);font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:3px 9px;border-radius:6px;}
+.sig .tag.ok{color:var(--good);background:var(--t-scale-bg);}
+
+/* heatmap */
+.hm{display:grid;gap:4px;}
+.hm .hc{aspect-ratio:1.85/1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-family:var(--fm);transition:.12s;cursor:default;}
+.hm .hc:hover{transform:scale(1.05);box-shadow:var(--sh-md);z-index:2;}
+.hm .rl{display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:var(--ink-2);}
+.hm .cl{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);font-weight:600;padding-bottom:2px;}
+
+/* doc preview */
+.doc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:30px 34px;line-height:1.65;}
+.doc h2{font-size:19px;margin:0 0 5px;font-weight:700;letter-spacing:-.01em;}
+.doc .meta{font-size:11.5px;color:var(--faint);margin-bottom:20px;font-family:var(--fm);}
+.doc h3{font-size:14px;margin:20px 0 8px;color:var(--ink);font-weight:600;}
+.doc p{font-size:13px;color:var(--ink-2);margin:7px 0;}
+.doc .chart-ph{height:96px;margin:13px 0;border-radius:8px;background:var(--surface-2);border:1px dashed var(--line-strong);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11.5px;font-family:var(--fm);}
+
+/* toggle */
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 2px;font-size:13px;color:var(--ink-2);border-bottom:1px solid var(--line);}
+.opt:last-child{border-bottom:none;}
+.opt .ol{display:flex;flex-direction:column;gap:1px;}
+.opt .ol em{font-style:normal;font-size:11px;color:var(--faint);}
+.toggle{width:36px;height:21px;border-radius:12px;background:var(--accent);position:relative;flex:none;cursor:pointer;transition:.16s;}
+.toggle::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2.5px;left:17px;transition:.16s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.toggle.off{background:#D7DCE4;}
+.toggle.off::after{left:2.5px;}
+
+/* utility */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.mb15{margin-bottom:15px;} .mb22{margin-bottom:22px;}
+.flex{display:flex;} .between{justify-content:space-between;} .ac{align-items:center;}
+.gap8{gap:8px;} .gap12{gap:12px;}
+.confbar{width:52px;height:5px;border-radius:3px;background:var(--surface-3);overflow:hidden;display:inline-block;vertical-align:middle;}
+.confbar i{display:block;height:100%;background:var(--accent);border-radius:3px;}
+.confbar.warn i{background:var(--warn);}
+</style>
+
+</head>
+<body data-lang="zh">
+<div class="app">
+
+  <!-- ============ TOP NAV ============ -->
+  <header class="topnav">
+    <div class="brand">
+      <span class="mark"></span>
+      SurveyMind
+      <span class="sub zh">问卷数据分析</span>
+      <span class="sub en">Survey Analytics</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-meta">
+        <span class="file"><span class="dot"></span>customer_survey.csv</span>
+      </div>
+      <div class="lang">
+        <button data-lang="zh" class="on">中</button>
+        <button data-lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+      <div class="side-cap zh">分析流程</div>
+      <div class="side-cap en">Workflow</div>
+      <nav class="steps">
+        <div class="step-rail"></div>
+        <button class="step done" data-screen="upload">
+          <span class="num">✓</span>
+          <span class="tx"><b class="zh">上传</b><b class="en">Upload</b><em class="zh">数据导入</em><em class="en">Import data</em></span>
+        </button>
+        <button class="step" data-screen="overview">
+          <span class="num">2</span>
+          <span class="tx"><b class="zh">数据概览</b><b class="en">Overview</b><em class="zh">Overview</em><em class="en">Inspect data</em></span>
+        </button>
+        <button class="step" data-screen="types">
+          <span class="num">3</span>
+          <span class="tx"><b class="zh">题型识别</b><b class="en">Question Types</b><em class="zh">Question Types</em><em class="en">Auto-detect</em></span>
+        </button>
+        <button class="step" data-screen="stats">
+          <span class="num">4</span>
+          <span class="tx"><b class="zh">描述统计</b><b class="en">Statistics</b><em class="zh">Statistics</em><em class="en">Per-question</em></span>
+        </button>
+        <button class="step" data-screen="cross">
+          <span class="num">5</span>
+          <span class="tx"><b class="zh">交叉分析</b><b class="en">Cross-tab</b><em class="zh">Cross-tab</em><em class="en">Compare groups</em></span>
+        </button>
+        <button class="step" data-screen="export">
+          <span class="num">6</span>
+          <span class="tx"><b class="zh">报告导出</b><b class="en">Export</b><em class="zh">Export</em><em class="en">Markdown</em></span>
+        </button>
+      </nav>
+      <div class="side-foot">
+        <div class="lab zh">当前数据集</div>
+        <div class="lab en">Active dataset</div>
+        <div class="fn">customer_survey.csv</div>
+        <div class="meta"><span class="zh">1,284 行 · 9 字段</span><span class="en">1,284 rows · 9 fields</span></div>
+        <div class="sample zh">示例数据 · 可替换</div>
+        <div class="sample en">Sample data · replaceable</div>
+      </div>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <main class="main" id="main">
+
+      <!-- ===================================================== -->
+      <!-- OVERVIEW (C) — dashboard                               -->
+      <!-- ===================================================== -->
+      <section class="screen active" id="screen-overview" data-screen-label="Overview / 数据概览">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 2 / 数据概览</div>
+            <div class="eyebrow en">Step 2 / Overview</div>
+            <h1><span class="zh">数据概览</span><span class="en">Data Overview</span><span class="alt zh">Data Overview</span><span class="alt en">数据概览</span></h1>
+            <p class="lede zh">已成功解析 customer_survey.csv — 关键指标、自动洞察与逐字段缺失分布一览。</p>
+            <p class="lede en">Parsed customer_survey.csv — key metrics, auto insights and per-field missingness at a glance.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost"><span class="zh">重新上传</span><span class="en">Re-upload</span></button>
+            <button class="btn primary" data-go="types"><span class="zh">下一步：题型识别</span><span class="en">Next: Question Types</span> →</button>
+          </div>
+        </div>
+
+        <!-- metric row -->
+        <div class="metrics mb15">
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></span><span class="zh">行数</span><span class="en">Rows</span></div>
+            <div class="row"><div class="v tnum">1,284</div>
+              <div class="spark"><div class="b" style="height:10px"></div><div class="b" style="height:14px"></div><div class="b" style="height:13px"></div><div class="b" style="height:20px"></div><div class="b hl" style="height:26px"></div></div>
+            </div>
+            <div class="foot"><span class="delta up">+212</span><span class="zh">较上次导入</span><span class="en">vs last import</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h16"></path><path d="M9 5v14" opacity=".5"></path></svg></span><span class="zh">字段数</span><span class="en">Fields</span></div>
+            <div class="row"><div class="v tnum">9</div></div>
+            <div class="foot"><span class="zh">6 题 · 3 背景变量</span><span class="en">6 questions · 3 covariates</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20" opacity=".4"></path><circle cx="12" cy="12" r="9"></circle></svg></span><span class="zh">缺失率</span><span class="en">Missing</span></div>
+            <div class="row"><div class="v tnum">3.4<small>%</small></div>
+              <div class="donut" style="background:conic-gradient(var(--accent) 0 12deg,#E6EBF3 12deg 360deg);"><span class="lab">3.4%</span></div>
+            </div>
+            <div class="foot"><span class="zh">集中于 2 个字段</span><span class="en">in 2 fields</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg></span><span class="zh">题目数</span><span class="en">Questions</span></div>
+            <div class="row"><div class="v tnum">6</div></div>
+            <div class="foot"><span class="zh">量表3 · 单选2 · 多选1 · 开放1 · 数值1</span><span class="en">3 scale · 2 single · 1 multi · 1 open · 1 num</span></div>
+          </div>
+        </div>
+
+        <!-- insights + missingness -->
+        <div style="display:grid;grid-template-columns:1.08fr .92fr;gap:15px;" class="mb15">
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">自动洞察</span><span class="en">Auto Insights</span><span class="alt zh">Auto Insights</span><span class="alt en">自动洞察</span></h3><span class="sub mono">3</span></div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+              <div class="ins warn"><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg></span>
+                <span class="zh"><b>「年龄」字段缺失 4.1%</b> — 建议在描述统计前处理，或保留为「未填」类别。</span>
+                <span class="en"><b>"age" is 4.1% missing</b> — handle before stats, or keep as an "unfilled" category.</span></div>
+              <div class="ins info"><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-4M12 8h.01"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+                <span class="zh"><b>「反馈 Q4」识别为开放题</b> — 统计阶段将做词频分析而非均值。</span>
+                <span class="en"><b>"Q4 feedback" is open-ended</b> — word frequency will be used instead of a mean.</span></div>
+              <div class="ins good"><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"></path><path d="M21 7v5h-5" opacity=".6"></path></svg></span>
+                <span class="zh"><b>满意度与推荐度高度相关</b>（r≈0.71）— 可在交叉分析中进一步验证。</span>
+                <span class="en"><b>Satisfaction ↔ recommendation correlate</b> (r≈0.71) — verify in cross-tab.</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">逐字段缺失</span><span class="en">Missing by Field</span></h3><span class="sub zh">按缺失率排序</span><span class="sub en">by rate</span></div>
+            <div style="padding:18px 17px 15px;">
+              <div class="bars" style="height:104px;">
+                <div class="b hl" style="height:100%"></div><div class="b hl" style="height:62%"></div>
+                <div class="b" style="height:26%"></div><div class="b" style="height:15%"></div>
+                <div class="b" style="height:9%"></div><div class="b" style="height:6%"></div>
+                <div class="b" style="height:4%"></div><div class="b" style="height:3%"></div>
+              </div>
+              <div class="axis"><span>反馈</span><span>年龄</span><span>地区</span><span>功能</span><span>满意</span><span>推荐</span><span>性别</span><span>id</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- preview table -->
+        <div class="card">
+          <div class="card-h">
+            <h3><span class="zh">数据预览</span><span class="en">Data Preview</span><span class="alt zh">Data Preview</span><span class="alt en">数据预览</span></h3>
+            <div class="flex gap8">
+              <span class="sel"><span class="lab zh">显示</span><span class="lab en">Show</span><span class="zh">前 6 行</span><span class="en">First 6</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+              <span class="sel"><span class="zh">列显示</span><span class="en">Columns</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+            </div>
+          </div>
+          <div class="scrollx">
+            <table class="dt">
+              <thead><tr>
+                <th>id</th><th>年龄 age</th><th>性别 gender</th><th>地区 region</th>
+                <th>满意度 Q1</th><th>推荐度 Q2</th><th>使用功能 Q3</th><th>反馈 Q4</th><th>提交时间</th>
+              </tr></thead>
+              <tbody>
+                <tr><td class="id">#1001</td><td class="num-cell">27</td><td>女</td><td>华东</td><td class="num-cell">4</td><td class="num-cell">9</td><td>导出, 图表</td><td>界面很清晰，上手快</td><td class="mono">06-02 14:21</td></tr>
+                <tr><td class="id">#1002</td><td class="num-cell">34</td><td>男</td><td>华北</td><td class="num-cell">3</td><td class="num-cell">6</td><td>交叉分析</td><td><span class="null">— null</span></td><td class="mono">06-02 14:33</td></tr>
+                <tr><td class="id">#1003</td><td><span class="null">— null</span></td><td>女</td><td>华南</td><td class="num-cell">5</td><td class="num-cell">10</td><td>导出, 报告, 图表</td><td>希望能支持 SPSS 导入</td><td class="mono">06-02 15:02</td></tr>
+                <tr><td class="id">#1004</td><td class="num-cell">41</td><td>男</td><td>西南</td><td class="num-cell">2</td><td class="num-cell">4</td><td>图表</td><td>加载有点慢</td><td class="mono">06-02 15:18</td></tr>
+                <tr><td class="id">#1005</td><td class="num-cell">29</td><td>女</td><td>华东</td><td class="num-cell">4</td><td class="num-cell">8</td><td>导出, 交叉分析</td><td>整体不错</td><td class="mono">06-02 15:40</td></tr>
+                <tr><td class="id">#1006</td><td class="num-cell">52</td><td>男</td><td>华中</td><td class="num-cell">5</td><td class="num-cell">9</td><td>报告</td><td><span class="null">— null</span></td><td class="mono">06-02 16:05</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================== -->
+      <!-- QUESTION TYPES (A) — table rows                       -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-types" data-screen-label="Question Types / 题型识别">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 3 / 题型识别</div>
+            <div class="eyebrow en">Step 3 / Question Types</div>
+            <h1><span class="zh">题型识别</span><span class="en">Question Types</span><span class="alt zh">Question Types</span><span class="alt en">题型识别</span></h1>
+            <p class="lede zh">系统已自动判定每个字段的题型。逐行核对,必要时用右侧下拉手动修正。</p>
+            <p class="lede en">Each field's type was auto-detected. Review per row, correct with the dropdown if needed.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost"><span class="zh">重置识别</span><span class="en">Reset</span></button>
+            <button class="btn primary" data-go="stats"><span class="zh">确认题型,进入统计</span><span class="en">Confirm &amp; continue</span> →</button>
+          </div>
+        </div>
+
+        <div class="card mb15">
+          <div style="padding:13px 17px;" class="legend">
+            <span style="font-size:12.5px;color:var(--ink-3);font-weight:600;margin-right:4px;"><span class="zh">识别结果</span><span class="en">Detected</span></span>
+            <span class="tb num"><span class="d"></span><span class="zh">数值 Numeric</span><span class="en">Numeric</span> · 1</span>
+            <span class="tb scale"><span class="d"></span><span class="zh">量表 Scale</span><span class="en">Scale</span> · 2</span>
+            <span class="tb single"><span class="d"></span><span class="zh">单选 Single</span><span class="en">Single</span> · 2</span>
+            <span class="tb multi"><span class="d"></span><span class="zh">多选 Multi</span><span class="en">Multi</span> · 1</span>
+            <span class="tb open"><span class="d"></span><span class="zh">开放 Open</span><span class="en">Open</span> · 1</span>
+            <span style="margin-left:auto;font-size:12px;color:var(--muted);"><span class="zh">7 个字段 · 已忽略 1 个 ID 列</span><span class="en">7 fields · 1 ID column ignored</span></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="scrollx">
+            <table class="dt">
+              <thead><tr>
+                <th><span class="zh">字段名</span><span class="en">Field</span></th>
+                <th><span class="zh">样本值</span><span class="en">Sample values</span></th>
+                <th><span class="zh">唯一值</span><span class="en">Unique</span></th>
+                <th><span class="zh">缺失</span><span class="en">Missing</span></th>
+                <th><span class="zh">识别题型</span><span class="en">Detected type</span></th>
+                <th><span class="zh">置信度</span><span class="en">Confidence</span></th>
+                <th style="text-align:right;"><span class="zh">手动修正</span><span class="en">Override</span></th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td><b style="color:var(--ink)">age</b> <span style="color:var(--faint)">年龄</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">27, 34, 41, 29, 52…</td>
+                  <td class="num-cell">46</td>
+                  <td class="num-cell" style="color:var(--warn);font-weight:600">4.1%</td>
+                  <td><span class="tb num"><span class="d"></span><span class="zh">数值</span><span class="en">Numeric</span></span></td>
+                  <td><span class="confbar"><i style="width:96%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.96</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">数值 Numeric</span><span class="en">Numeric</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr>
+                  <td><b style="color:var(--ink)">Q1_satisfaction</b> <span style="color:var(--faint)">满意度</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">1, 2, 3, 4, 5</td>
+                  <td class="num-cell">5</td>
+                  <td class="num-cell">1.7%</td>
+                  <td><span class="tb scale"><span class="d"></span><span class="zh">量表</span><span class="en">Scale</span></span></td>
+                  <td><span class="confbar"><i style="width:99%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.99</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">量表 Scale</span><span class="en">Scale</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr>
+                  <td><b style="color:var(--ink)">Q2_recommend</b> <span style="color:var(--faint)">推荐度</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">0–10 (NPS)</td>
+                  <td class="num-cell">11</td>
+                  <td class="num-cell">0.0%</td>
+                  <td><span class="tb scale"><span class="d"></span><span class="zh">量表</span><span class="en">Scale</span></span></td>
+                  <td><span class="confbar"><i style="width:88%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.88</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">量表 Scale</span><span class="en">Scale</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr>
+                  <td><b style="color:var(--ink)">gender</b> <span style="color:var(--faint)">性别</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">女, 男</td>
+                  <td class="num-cell">2</td>
+                  <td class="num-cell">0.0%</td>
+                  <td><span class="tb single"><span class="d"></span><span class="zh">单选</span><span class="en">Single</span></span></td>
+                  <td><span class="confbar"><i style="width:97%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.97</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">单选 Single</span><span class="en">Single</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr style="background:var(--t-multi-bg)">
+                  <td><b style="color:var(--ink)">Q3_features</b> <span style="color:var(--faint)">使用功能</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">导出; 图表; 交叉…</td>
+                  <td class="num-cell">5</td>
+                  <td class="num-cell">0.9%</td>
+                  <td><span class="tb multi"><span class="d"></span><span class="zh">多选</span><span class="en">Multi</span></span></td>
+                  <td><span class="confbar warn"><i style="width:58%"></i></span> <span class="mono" style="font-size:11px;color:var(--warn);font-weight:600">0.58</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between;border-color:var(--t-multi-solid)"><span class="zh">多选 Multi</span><span class="en">Multi</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr>
+                  <td><b style="color:var(--ink)">region</b> <span style="color:var(--faint)">地区</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">华东, 华北, 华南…</td>
+                  <td class="num-cell">7</td>
+                  <td class="num-cell" style="color:var(--warn);font-weight:600">2.3%</td>
+                  <td><span class="tb single"><span class="d"></span><span class="zh">单选</span><span class="en">Single</span></span></td>
+                  <td><span class="confbar"><i style="width:91%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.91</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">单选 Single</span><span class="en">Single</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+                <tr>
+                  <td><b style="color:var(--ink)">Q4_feedback</b> <span style="color:var(--faint)">反馈</span></td>
+                  <td class="mono" style="font-size:11.5px;color:var(--ink-3)">"界面很清晰…"</td>
+                  <td class="num-cell">—</td>
+                  <td class="num-cell" style="color:var(--warn);font-weight:600">75.7%</td>
+                  <td><span class="tb open"><span class="d"></span><span class="zh">开放</span><span class="en">Open</span></span></td>
+                  <td><span class="confbar"><i style="width:94%"></i></span> <span class="mono" style="font-size:11px;color:var(--muted)">0.94</span></td>
+                  <td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">开放 Open</span><span class="en">Open</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================== -->
+      <!-- STATS (A) — uniform stat-card grid                    -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-stats" data-screen-label="Statistics / 描述统计">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 4 / 描述统计</div>
+            <div class="eyebrow en">Step 4 / Statistics</div>
+            <h1><span class="zh">描述统计</span><span class="en">Descriptive Statistics</span><span class="alt zh">Descriptive Statistics</span><span class="alt en">描述统计</span></h1>
+            <p class="lede zh">每道题一张统计卡 — 摘要指标搭配与题型匹配的图表(直方/柱状/条形/词频)。</p>
+            <p class="lede en">One card per question — summary metrics with a chart matched to its type.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost"><span class="zh">导出图表</span><span class="en">Export charts</span></button>
+            <button class="btn primary" data-go="cross"><span class="zh">下一步:交叉分析</span><span class="en">Next: Cross-tab</span> →</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+          <!-- age (numeric, histogram) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">年龄</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">age</div></div>
+              <span class="tb num"><span class="d"></span><span class="zh">数值</span><span class="en">Numeric</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">均值</span><span class="en">Mean</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">33.6</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">中位</span><span class="en">Median</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">31</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">SD<b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">9.2</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">范围</span><span class="en">Range</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">18–67</b></div>
+            </div>
+            <div style="padding:14px 16px 15px">
+              <div class="bars" style="height:72px"><div class="b" style="height:22%"></div><div class="b" style="height:46%"></div><div class="b hl" style="height:90%"></div><div class="b hl" style="height:100%"></div><div class="b" style="height:72%"></div><div class="b" style="height:48%"></div><div class="b" style="height:30%"></div><div class="b" style="height:16%"></div></div>
+              <div class="axis"><span>18</span><span class="zh">直方图</span><span class="en">Histogram</span><span>67</span></div>
+            </div>
+          </div>
+
+          <!-- Q1 satisfaction (scale, bars) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">满意度</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">Q1_satisfaction</div></div>
+              <span class="tb scale"><span class="d"></span><span class="zh">量表</span><span class="en">Scale</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">均值</span><span class="en">Mean</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">3.8</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">中位</span><span class="en">Median</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">4</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">SD<b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">0.9</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">n<b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">1262</b></div>
+            </div>
+            <div style="padding:14px 16px 15px">
+              <div class="bars" style="height:72px"><div class="b" style="height:14%"></div><div class="b" style="height:30%"></div><div class="b" style="height:60%"></div><div class="b hl" style="height:100%"></div><div class="b" style="height:78%"></div></div>
+              <div class="axis"><span class="zh">1 非常不满</span><span class="en">1 low</span><span class="zh">5 非常满意</span><span class="en">5 high</span></div>
+            </div>
+          </div>
+
+          <!-- Q2 recommend (scale/NPS, bars) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">推荐度</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">Q2_recommend</div></div>
+              <span class="tb scale"><span class="d"></span><span class="zh">量表</span><span class="en">Scale</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">均值</span><span class="en">Mean</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">7.4</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">NPS<b style="display:block;font-size:18px;font-weight:700;color:var(--good)">+32</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">SD<b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">2.1</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)">n<b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">1271</b></div>
+            </div>
+            <div style="padding:14px 16px 15px">
+              <div class="bars" style="height:72px"><div class="b" style="height:8%"></div><div class="b" style="height:10%"></div><div class="b" style="height:14%"></div><div class="b" style="height:18%"></div><div class="b" style="height:24%"></div><div class="b" style="height:40%"></div><div class="b" style="height:52%"></div><div class="b" style="height:70%"></div><div class="b hl" style="height:100%"></div><div class="b" style="height:84%"></div><div class="b" style="height:62%"></div></div>
+              <div class="axis"><span>0</span><span class="zh">0–10 NPS</span><span class="en">0–10 NPS</span><span>10</span></div>
+            </div>
+          </div>
+
+          <!-- gender (single, horizontal bars) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">性别</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">gender</div></div>
+              <span class="tb single"><span class="d"></span><span class="zh">单选</span><span class="en">Single</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">众数</span><span class="en">Mode</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">女</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">占比</span><span class="en">Share</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">58%</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">类别</span><span class="en">Levels</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">2</b></div>
+            </div>
+            <div style="padding:16px 16px 18px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px"><span style="width:28px;color:var(--ink-2)">女</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:6px;overflow:hidden"><div style="width:58%;height:100%;background:var(--accent);border-radius:6px"></div></div><span class="mono" style="color:var(--faint);font-size:11px">58%</span></div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px"><span style="width:28px;color:var(--ink-2)">男</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:6px;overflow:hidden"><div style="width:42%;height:100%;background:var(--accent-line);border-radius:6px"></div></div><span class="mono" style="color:var(--faint);font-size:11px">42%</span></div>
+            </div>
+          </div>
+
+          <!-- region (single, bars) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">地区</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">region</div></div>
+              <span class="tb single"><span class="d"></span><span class="zh">单选</span><span class="en">Single</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">众数</span><span class="en">Mode</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">华东</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">占比</span><span class="en">Share</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">31%</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">类别</span><span class="en">Levels</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">7</b></div>
+            </div>
+            <div style="padding:14px 16px 15px">
+              <div class="bars" style="height:72px"><div class="b hl" style="height:100%"></div><div class="b" style="height:72%"></div><div class="b" style="height:58%"></div><div class="b" style="height:44%"></div><div class="b" style="height:32%"></div><div class="b" style="height:20%"></div><div class="b" style="height:12%"></div></div>
+              <div class="axis"><span>华东</span><span>…</span><span class="zh">其他</span><span class="en">other</span></div>
+            </div>
+          </div>
+
+          <!-- Q3 features (multi, bars) -->
+          <div class="card stat-card" style="display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">使用功能</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">Q3_features</div></div>
+              <span class="tb multi"><span class="d"></span><span class="zh">多选</span><span class="en">Multi</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">选项</span><span class="en">Options</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">5</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">人均选</span><span class="en">Avg/resp</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">1.8</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">最高</span><span class="en">Top</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">导出</b></div>
+            </div>
+            <div style="padding:14px 16px 15px">
+              <div class="bars" style="height:72px"><div class="b hl" style="height:100%"></div><div class="b" style="height:74%"></div><div class="b" style="height:55%"></div><div class="b" style="height:38%"></div><div class="b" style="height:22%"></div></div>
+              <div class="axis"><span>导出</span><span>图表</span><span>交叉</span><span>报告</span><span class="zh">其他</span><span class="en">other</span></div>
+            </div>
+          </div>
+
+          <!-- Q4 feedback (open, word freq) — spans 2 -->
+          <div class="card stat-card" style="grid-column:span 2;display:flex;flex-direction:column;">
+            <div class="stat-top" style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 0">
+              <div><div class="nm" style="font-size:14.5px;font-weight:700">反馈</div><div class="fld mono" style="font-size:10.5px;color:var(--faint)">Q4_feedback</div></div>
+              <span class="tb open"><span class="d"></span><span class="zh">开放</span><span class="en">Open</span></span>
+            </div>
+            <div class="kpis" style="display:flex;gap:16px;padding:11px 16px 13px;border-bottom:1px solid var(--line)">
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">有效回答</span><span class="en">Responses</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">312</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">平均字数</span><span class="en">Avg length</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">14</b></div>
+              <div class="kpi" style="font-size:10.5px;color:var(--muted)"><span class="zh">高频词</span><span class="en">Top word</span><b style="display:block;font-size:18px;font-weight:700;color:var(--ink)">清晰</b></div>
+            </div>
+            <div style="padding:15px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline">
+              <span class="pill" style="font-size:14px"><b>清晰</b><span class="mono" style="font-size:10.5px;color:var(--faint)">86</span></span>
+              <span class="pill" style="font-size:13px"><b>导出</b><span class="mono" style="font-size:10.5px;color:var(--faint)">64</span></span>
+              <span class="pill"><b>速度</b><span class="mono" style="font-size:10.5px;color:var(--faint)">41</span></span>
+              <span class="pill" style="font-size:12px"><b>SPSS</b><span class="mono" style="font-size:10.5px;color:var(--faint)">33</span></span>
+              <span class="pill"><b>图表</b><span class="mono" style="font-size:10.5px;color:var(--faint)">28</span></span>
+              <span class="pill" style="font-size:12px"><b>界面</b><span class="mono" style="font-size:10.5px;color:var(--faint)">22</span></span>
+              <span class="pill" style="font-size:11px"><b>慢</b><span class="mono" style="font-size:10.5px;color:var(--faint)">19</span></span>
+              <span class="pill" style="font-size:11px"><b>教程</b><span class="mono" style="font-size:10.5px;color:var(--faint)">12</span></span>
+            </div>
+          </div>
+
+          <!-- helper card -->
+          <div class="card" style="display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:12px;padding:20px;background:var(--surface-2)">
+            <span class="zh">每张卡按题型自动选图<br>直方 · 柱状 · 条形 · 词频</span>
+            <span class="en">Chart auto-picked by type<br>histogram · bars · word freq</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================== -->
+      <!-- CROSS-TAB (C) — heatmap matrix                        -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-cross" data-screen-label="Cross-tab / 交叉分析">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 5 / 交叉分析</div>
+            <div class="eyebrow en">Step 5 / Cross-tab</div>
+            <h1><span class="zh">交叉分析</span><span class="en">Cross-tabulation</span><span class="alt zh">Cross-tabulation</span><span class="alt en">交叉分析</span></h1>
+            <p class="lede zh">热力矩阵 — 两个分类变量交叉,单元格颜色深浅表示占比,底部给出显著性检验结论。</p>
+            <p class="lede en">Heatmap matrix — two categoricals crossed, cell shade = share, with a significance test below.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost"><span class="zh">加入报告</span><span class="en">Add to report</span></button>
+            <button class="btn primary" data-go="export"><span class="zh">下一步:报告导出</span><span class="en">Next: Export</span> →</button>
+          </div>
+        </div>
+
+        <!-- controls -->
+        <div class="card mb15">
+          <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:14px 17px">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span class="zh">行变量</span><span class="en">Rows</span></span>
+              <span class="sel wide" style="justify-content:space-between"><span>地区 region</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+            </div>
+            <span style="font-size:18px;color:var(--faint);padding-bottom:6px">×</span>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span class="zh">列变量</span><span class="en">Columns</span></span>
+              <span class="sel wide" style="justify-content:space-between"><span><span class="zh">满意度档位 Q1</span><span class="en">Satisfaction Q1</span></span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span class="zh">单元格数值</span><span class="en">Cell</span></span>
+              <span class="sel" style="justify-content:space-between"><span><span class="zh">行占比 %</span><span class="en">Row %</span></span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+            </div>
+            <button class="btn primary" style="margin-left:auto"><span class="zh">运行分析</span><span class="en">Run</span></button>
+          </div>
+        </div>
+
+        <!-- heatmap -->
+        <div class="card">
+          <div class="card-h">
+            <h3><span class="zh">地区 × 满意度</span><span class="en">Region × Satisfaction</span></h3>
+            <div class="legend-grad" style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:10.5px;color:var(--faint)"><span class="zh">低</span><span class="en">Low</span></span>
+              <span class="g" style="width:84px;height:9px;border-radius:4px;background:linear-gradient(90deg,var(--accent-soft),var(--accent))"></span>
+              <span style="font-size:10.5px;color:var(--faint)"><span class="zh">高</span><span class="en">High</span></span>
+            </div>
+          </div>
+          <div style="padding:18px 18px 6px">
+            <div class="hm" style="grid-template-columns:88px repeat(5,1fr)">
+              <div class="cl"></div>
+              <div class="cl">1</div><div class="cl">2</div><div class="cl">3</div><div class="cl">4</div><div class="cl">5</div>
+
+              <div class="rl">华东</div>
+              <div class="hc" style="background:#EDF1F9;color:#9aa6bd">2%</div><div class="hc" style="background:#D9E2F2;color:#7986a3">5%</div><div class="hc" style="background:#A9BEE2;color:#fff">11%</div><div class="hc" style="background:#5E7FBC;color:#fff">44%</div><div class="hc" style="background:#3E5C99;color:#fff">38%</div>
+
+              <div class="rl">华北</div>
+              <div class="hc" style="background:#E6ECF6;color:#8b97b2">4%</div><div class="hc" style="background:#C8D5EC;color:#6b7793">9%</div><div class="hc" style="background:#9AB1DC;color:#fff">18%</div><div class="hc" style="background:#5174B5;color:#fff">41%</div><div class="hc" style="background:#7C97CC;color:#fff">28%</div>
+
+              <div class="rl">华南</div>
+              <div class="hc" style="background:#F1F4FB;color:#9aa6bd">1%</div><div class="hc" style="background:#E0E7F4;color:#8b97b2">3%</div><div class="hc" style="background:#B7C8E8;color:#fff">8%</div><div class="hc" style="background:#4D72B4;color:#fff">49%</div><div class="hc" style="background:#33508A;color:#fff">39%</div>
+
+              <div class="rl">华中</div>
+              <div class="hc" style="background:#DEE6F4;color:#8b97b2">6%</div><div class="hc" style="background:#B7C8E8;color:#fff">12%</div><div class="hc" style="background:#90A9D8;color:#fff">18%</div><div class="hc" style="background:#6685C0;color:#fff">40%</div><div class="hc" style="background:#9AB1DC;color:#fff">24%</div>
+
+              <div class="rl">西南</div>
+              <div class="hc" style="background:#E9EFF7;color:#8b97b2">3%</div><div class="hc" style="background:#D2DDEF;color:#7986a3">8%</div><div class="hc" style="background:#A9BEE2;color:#fff">13%</div><div class="hc" style="background:#577AB8;color:#fff">45%</div><div class="hc" style="background:#7C97CC;color:#fff">31%</div>
+            </div>
+          </div>
+          <div class="sig">
+            <span class="tag ok">χ² = 38.6</span>
+            <span class="mono">df = 24 · p = 0.030</span>
+            <span class="zh">地区与满意度档位存在显著关联(p &lt; 0.05)。</span>
+            <span class="en">Region and satisfaction level are significantly associated (p &lt; 0.05).</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================== -->
+      <!-- EXPORT (A) — checklist + live preview                 -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-export" data-screen-label="Export / 报告导出">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 6 / 报告导出</div>
+            <div class="eyebrow en">Step 6 / Export</div>
+            <h1><span class="zh">报告导出</span><span class="en">Report Export</span><span class="alt zh">Report Export</span><span class="alt en">报告导出</span></h1>
+            <p class="lede zh">勾选要包含的内容,右侧实时预览,确认后一键导出 Markdown。</p>
+            <p class="lede en">Toggle sections to include, preview live on the right, then export Markdown in one click.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost"><span class="zh">复制全文</span><span class="en">Copy all</span></button>
+            <button class="btn" id="ai-report-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 15.8l-1.8-4.6L6 9.4l4.2-1.8L12 3z"></path><path d="M19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14z" opacity=".55"></path></svg><span class="zh">AI 智能解读</span><span class="en">AI Insight</span></button>
+            <button class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg><span class="zh">导出 Markdown</span><span class="en">Export Markdown</span></button>
+          </div>
+        </div>
+
+        <!-- preview -->
+        <div class="card">
+            <div class="card-h"><h3><span class="zh">报告预览</span><span class="en">Preview</span></h3><span class="sub mono">customer_survey_report.md</span></div>
+            <div style="padding:18px">
+              <div class="doc">
+                <h2 class="zh">客户满意度问卷分析报告</h2>
+                <h2 class="en">Customer Satisfaction Survey — Analysis Report</h2>
+                <div class="meta"># customer_survey.csv · n=1,284 · 2026-06-10</div>
+
+                <h3 class="zh">1. 数据概览</h3>
+                <h3 class="en">1. Data Overview</h3>
+                <p class="zh">共回收 <b>1,284</b> 份问卷,有效 1,271 份,整体缺失率 3.4%。包含 6 道题与 3 个背景变量。</p>
+                <p class="en">Collected <b>1,284</b> responses (1,271 valid), overall missing rate 3.4%. Contains 6 questions and 3 covariates.</p>
+
+                <h3 class="zh">2. 描述统计</h3>
+                <h3 class="en">2. Descriptive Statistics</h3>
+                <p class="zh">满意度均值 3.8(SD 0.9);推荐度 NPS +32;女性样本占 58%。</p>
+                <p class="en">Satisfaction mean 3.8 (SD 0.9); recommendation NPS +32; 58% female.</p>
+                <div class="chart-ph"><span class="zh">[ 图表 · 满意度分布直方图 ]</span><span class="en">[ chart · satisfaction histogram ]</span></div>
+
+                <h3 class="zh">3. 交叉分析</h3>
+                <h3 class="en">3. Cross-tabulation</h3>
+                <p class="zh">地区间满意度差异显著(χ² = 38.6, p = 0.030);性别对推荐度有显著影响(t = 3.05, p = 0.002)。</p>
+                <p class="en">Satisfaction differs significantly by region (χ² = 38.6, p = 0.030); gender affects recommendation (t = 3.05, p = 0.002).</p>
+              </div>
+            </div>
+          </div>
+
+        <!-- AI interpretation (hidden until requested) -->
+        <div class="card" id="ai-report-card" style="margin-top:15px;display:none;">
+          <div class="card-h"><h3><span class="zh">AI 智能解读</span><span class="en">AI Insight</span></h3><span class="sub mono" id="ai-report-status"></span></div>
+          <div style="padding:18px">
+            <div class="doc" id="ai-report-doc"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================== -->
+      <!-- UPLOAD — data import first screen (front/back split)  -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-upload" data-screen-label="Upload / 数据导入">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">步骤 1 / 数据导入</div>
+            <div class="eyebrow en">Step 1 / Data Import</div>
+            <h1><span class="zh">数据导入</span><span class="en">Data Import</span><span class="alt zh">Data Import</span><span class="alt en">数据导入</span></h1>
+            <p class="lede zh">上传 CSV / Excel 问卷数据，SurveyMind 将自动识别题型并生成分析。</p>
+            <p class="lede en">Upload CSV / Excel survey data — SurveyMind detects question types and builds the analysis.</p>
+          </div>
+        </div>
+
+        <div class="card" style="max-width:680px;margin:40px auto 0;">
+          <div id="dropzone" style="margin:16px;padding:56px 40px;border:1.5px dashed var(--accent-line);border-radius:var(--r-md);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;cursor:pointer;transition:.15s;">
+            <span style="width:48px;height:48px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><path d="M12 16V6"></path><path d="M8 10l4-4 4 4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+            </span>
+            <div style="font-size:14.5px;font-weight:600;color:var(--ink);"><span class="zh">选择文件或拖拽到这里上传</span><span class="en">Choose a file or drag &amp; drop here</span></div>
+            <div style="font-size:12px;color:var(--muted);"><span class="zh">支持 </span><span class="en">Supports </span><span class="mono">CSV · XLSX · XLS</span></div>
+            <button class="btn primary" type="button"><span class="zh">选择文件</span><span class="en">Choose file</span></button>
+          </div>
+        </div>
+        <div style="max-width:680px;margin:14px auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted);">
+          <span><span class="zh">数据仅在本地会话中处理</span><span class="en">Data stays in your local session</span></span>
+          <button class="btn ghost" id="demo-btn" type="button"><span class="zh">使用示例数据体验 →</span><span class="en">Try with sample data →</span></button>
+        </div>
+      </section>
+
+      <!-- screens injected below -->
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/nav.js"></script>
+
+
+<script src="data.js"></script>
+</body></html>
