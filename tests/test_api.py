@@ -2,7 +2,9 @@
 wiring, serialization safety (NaN -> null), and session lifecycle."""
 from __future__ import annotations
 
+import asyncio
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -19,7 +21,9 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "SESSIONS_DIR", tmp_path / "sessions")
     api._session_cache.clear()
-    return TestClient(api.app)
+    api._cancel_session_expiry_handles()
+    with TestClient(api.app) as test_client:
+        yield test_client
 
 
 def _upload_demo(client) -> str:
@@ -32,6 +36,64 @@ def _upload_demo(client) -> str:
 def test_upload_returns_session(client):
     session_id = _upload_demo(client)
     assert len(session_id) == 32
+
+
+def test_health(client):
+    assert client.get("/health").json() == {"status": "ok"}
+
+
+def test_cors_allows_local_frontend_and_rejects_unknown_origin(client):
+    allowed = client.options(
+        "/health",
+        headers={
+            "Origin": "http://localhost:5500",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert allowed.headers["access-control-allow-origin"] == "http://localhost:5500"
+
+    rejected = client.options(
+        "/health",
+        headers={
+            "Origin": "https://not-allowed.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert "access-control-allow-origin" not in rejected.headers
+
+
+def test_expired_session_is_deleted_on_access(client):
+    sid = _upload_demo(client)
+    _, meta = api._session_cache[sid]
+    meta["created_at"] = time.time() - api.SESSION_MAX_AGE_SECONDS - 1
+    api._write_meta(sid, meta)
+
+    response = client.get(f"/api/{sid}/overview")
+
+    assert response.status_code == 404
+    assert sid not in api._session_cache
+    assert not (api.SESSIONS_DIR / sid).exists()
+
+
+def test_cleanup_loop_runs_without_new_upload(monkeypatch):
+    calls = 0
+
+    def record_cleanup(*, now=None):
+        nonlocal calls
+        calls += 1
+
+    monkeypatch.setattr(api, "_cleanup_old_sessions", record_cleanup)
+    monkeypatch.setattr(api, "SESSION_CLEANUP_INTERVAL_SECONDS", 0.005)
+
+    async def exercise_loop():
+        task = asyncio.create_task(api._session_cleanup_loop())
+        await asyncio.sleep(0.025)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(exercise_loop())
+    assert calls >= 2
 
 
 def test_upload_empty_file_400(client):

@@ -12,7 +12,17 @@
   "use strict";
 
   var API = (function () {
-    try { return localStorage.getItem("sm_api") || "http://127.0.0.1:8000"; } catch (e) { return "http://127.0.0.1:8000"; }
+    var saved = "";
+    try { saved = localStorage.getItem("sm_api") || ""; } catch (e) {}
+    var configured = window.SURVEYMIND_CONFIG && window.SURVEYMIND_CONFIG.apiBaseUrl;
+    var value = saved || configured || "";
+    if (value) return String(value).replace(/\/+$/, "");
+
+    var host = window.location.hostname;
+    if (!host || host === "localhost" || host === "127.0.0.1") {
+      return "http://127.0.0.1:8000";
+    }
+    return window.location.origin;
   })();
 
   var state = {
