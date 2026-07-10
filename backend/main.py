@@ -9,10 +9,13 @@ Run from the project root:
 """
 from __future__ import annotations
 
+import asyncio
 import json
+import os
 import shutil
 import time
 import uuid
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 import numpy as np
@@ -48,7 +51,12 @@ from src.report_generator import build_dataset_summary, build_llm_prompt, genera
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SESSIONS_DIR = PROJECT_ROOT / "uploads_tmp"
-SESSION_MAX_AGE_SECONDS = 24 * 60 * 60
+SESSION_MAX_AGE_SECONDS = 60 * 60
+SESSION_CLEANUP_INTERVAL_SECONDS = 30
+LOCAL_FRONTEND_ORIGINS = (
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+)
 
 # Short keys the frontend uses for badge classes / the "量表3 · 单选2" counters.
 SHORT_TYPE_KEYS = {
@@ -61,28 +69,98 @@ SHORT_TYPE_KEYS = {
 }
 FULL_TYPE_BY_SHORT = {short: full for full, short in SHORT_TYPE_KEYS.items()}
 
-app = FastAPI(title="SurveyMind API", version="0.1.0")
+# Small in-process cache so repeated requests for one session skip the disk.
+_session_cache: dict[str, tuple[pd.DataFrame, dict]] = {}
+_session_expiry_handles: dict[str, asyncio.TimerHandle] = {}
 
-# Local development: the static frontend is served from another port (or the
-# filesystem), so allow any origin. No credentials are used.
+
+def _allowed_origins() -> list[str]:
+    """Return the explicit CORS allowlist for local or hosted frontends."""
+    configured = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    origins = [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+    return origins or list(LOCAL_FRONTEND_ORIGINS)
+
+
+def _delete_session(session_id: str) -> None:
+    handle = _session_expiry_handles.pop(session_id, None)
+    if handle is not None:
+        handle.cancel()
+    _session_cache.pop(session_id, None)
+    shutil.rmtree(SESSIONS_DIR / session_id, ignore_errors=True)
+
+
+def _schedule_session_expiry(session_id: str, created_at: float) -> None:
+    """Schedule deletion at the one-hour deadline while this process is awake."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    previous = _session_expiry_handles.pop(session_id, None)
+    if previous is not None:
+        previous.cancel()
+    delay = max(0.0, created_at + SESSION_MAX_AGE_SECONDS - time.time())
+    _session_expiry_handles[session_id] = loop.call_later(delay, _delete_session, session_id)
+
+
+def _cancel_session_expiry_handles() -> None:
+    for handle in _session_expiry_handles.values():
+        handle.cancel()
+    _session_expiry_handles.clear()
+
+
+def _session_created_at(session_dir: Path) -> float:
+    meta_path = session_dir / "meta.json"
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        return float(meta["created_at"])
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return session_dir.stat().st_mtime
+
+
+def _cleanup_old_sessions(*, now: float | None = None) -> None:
+    if not SESSIONS_DIR.exists():
+        return
+    cutoff = (time.time() if now is None else now) - SESSION_MAX_AGE_SECONDS
+    for session_dir in SESSIONS_DIR.iterdir():
+        if session_dir.is_dir() and _session_created_at(session_dir) <= cutoff:
+            _delete_session(session_dir.name)
+
+
+async def _session_cleanup_loop() -> None:
+    """Delete expired upload sessions even when no new upload arrives."""
+    while True:
+        _cleanup_old_sessions()
+        await asyncio.sleep(SESSION_CLEANUP_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    _cleanup_old_sessions()
+    if SESSIONS_DIR.exists():
+        for session_dir in SESSIONS_DIR.iterdir():
+            if session_dir.is_dir():
+                _schedule_session_expiry(session_dir.name, _session_created_at(session_dir))
+    cleanup_task = asyncio.create_task(_session_cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
+        _cancel_session_expiry_handles()
+
+
+app = FastAPI(title="SurveyMind API", version="0.1.0", lifespan=lifespan)
+
+# The hosted frontend origin is supplied through CORS_ALLOWED_ORIGINS. Local
+# development remains available by default on ports documented in README.md.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Small in-process cache so repeated requests for one session skip the disk.
-_session_cache: dict[str, tuple[pd.DataFrame, dict]] = {}
-
-
-def _cleanup_old_sessions() -> None:
-    if not SESSIONS_DIR.exists():
-        return
-    cutoff = time.time() - SESSION_MAX_AGE_SECONDS
-    for session_dir in SESSIONS_DIR.iterdir():
-        if session_dir.is_dir() and session_dir.stat().st_mtime < cutoff:
-            shutil.rmtree(session_dir, ignore_errors=True)
 
 
 def _write_meta(session_id: str, meta: dict) -> None:
@@ -107,12 +185,17 @@ def _save_session(df: pd.DataFrame, filename: str) -> tuple[str, dict]:
     }
     _write_meta(session_id, meta)
     _session_cache[session_id] = (df, meta)
+    _schedule_session_expiry(session_id, meta["created_at"])
     return session_id, meta
 
 
 def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
     if session_id in _session_cache:
-        return _session_cache[session_id]
+        df, meta = _session_cache[session_id]
+        if float(meta.get("created_at", 0)) + SESSION_MAX_AGE_SECONDS <= time.time():
+            _delete_session(session_id)
+            raise HTTPException(status_code=404, detail="Session expired. Please upload the file again.")
+        return df, meta
 
     session_dir = SESSIONS_DIR / session_id
     data_path = session_dir / "data.parquet"
@@ -120,8 +203,12 @@ def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
     if not data_path.exists() or not meta_path.exists():
         raise HTTPException(status_code=404, detail="Session not found. Please upload the file again.")
 
-    df = pd.read_parquet(data_path)
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    if float(meta.get("created_at", 0)) + SESSION_MAX_AGE_SECONDS <= time.time():
+        _delete_session(session_id)
+        raise HTTPException(status_code=404, detail="Session expired. Please upload the file again.")
+
+    df = pd.read_parquet(data_path)
     _session_cache[session_id] = (df, meta)
     return df, meta
 
@@ -129,6 +216,11 @@ def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
 def df_records(df: pd.DataFrame) -> list[dict]:
     """DataFrame -> JSON-safe list of records (NaN -> null, numpy -> native)."""
     return json.loads(df.to_json(orient="records", force_ascii=False))
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/api/upload")
@@ -158,7 +250,7 @@ async def upload(file: UploadFile = File(...)):
 
 
 @app.post("/api/demo")
-def demo_session():
+async def demo_session():
     """Create a session from the bundled sample dataset (same pipeline as upload)."""
     demo_path = PROJECT_ROOT / "data" / "sample_survey.csv"
     if not demo_path.exists():
