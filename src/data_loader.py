@@ -17,14 +17,21 @@ def load_demo_dataset(path: str | Path = DEFAULT_DEMO_PATH) -> pd.DataFrame:
 
 
 def load_uploaded_dataset(file_bytes: bytes, filename: str) -> pd.DataFrame:
-    """Load a CSV or Excel file from uploaded bytes."""
+    """Load a CSV or Excel file from uploaded bytes.
+
+    Malformed CSV rows fall back to the tolerant python engine so that messy
+    real-world exports (extra delimiters, ragged rows) still load. Every entry
+    point (Streamlit app, API layer) shares this fallback behaviour.
+    """
     suffix = Path(filename).suffix.lower()
-    buffer = BytesIO(file_bytes)
 
     if suffix == ".csv":
-        return pd.read_csv(buffer)
+        try:
+            return pd.read_csv(BytesIO(file_bytes))
+        except pd.errors.ParserError:
+            return pd.read_csv(BytesIO(file_bytes), engine="python", on_bad_lines="skip")
     if suffix in {".xlsx", ".xls"}:
-        return pd.read_excel(buffer)
+        return pd.read_excel(BytesIO(file_bytes))
 
     raise ValueError("Unsupported file type. Please upload a CSV or Excel file.")
 

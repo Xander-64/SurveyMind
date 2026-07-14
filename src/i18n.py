@@ -13,6 +13,7 @@ from src.field_semantics import (
 from src.question_type_detector import (
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
+    QUESTION_TYPE_EMPTY,
     QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
     QUESTION_TYPE_SINGLE,
@@ -204,6 +205,7 @@ TRANSLATIONS = {
         "scale_level_low": "relatively low",
         "scale_level_moderate": "moderate",
         "scale_level_high": "relatively high",
+        "scale_level_Insufficient data": "Insufficient data",
     },
     "zh-CN": {
         "language_name": "中文",
@@ -379,6 +381,7 @@ TRANSLATIONS = {
         "scale_level_low": "相对较低",
         "scale_level_moderate": "中等",
         "scale_level_high": "相对较高",
+        "scale_level_Insufficient data": "Insufficient data",
     },
 }
 
@@ -389,6 +392,7 @@ QUESTION_TYPE_TRANSLATIONS = {
     QUESTION_TYPE_SINGLE: {"en": "single-choice question", "zh-CN": "单选题"},
     QUESTION_TYPE_MULTIPLE: {"en": "multiple-choice question", "zh-CN": "多选题"},
     QUESTION_TYPE_OPEN: {"en": "open-ended text question", "zh-CN": "开放题"},
+    QUESTION_TYPE_EMPTY: {"en": "empty question", "zh-CN": "空白列"},
 }
 
 

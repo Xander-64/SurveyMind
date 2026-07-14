@@ -176,6 +176,38 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+### Front-end / back-end mode (FastAPI + static frontend)
+
+```bash
+# terminal 1 — API backend
+uvicorn backend.main:app --reload --port 8000
+
+# terminal 2 — static frontend
+python -m http.server 5500 --directory frontend
+```
+
+Then open `http://localhost:5500`.
+
+## AI Report Configuration (cloud LLM API)
+
+The "AI 智能解读 / AI Insight" feature calls a cloud LLM API. **API keys are
+read from environment variables only — never hardcode a key and never commit
+one to git** (`.env` is git-ignored).
+
+After cloning, set up your own key:
+
+```bash
+cp .env.example .env
+# then edit .env and fill in your own LLM_API_KEY
+```
+
+Default provider is DeepSeek (`https://api.deepseek.com/v1`, model
+`deepseek-chat`). Because the client speaks the OpenAI-compatible
+chat-completions format, switching providers (Anthropic Claude, Kimi, GLM,
+etc.) only requires editing `LLM_BASE_URL` and `LLM_MODEL` in `.env` — see the
+comments inside `.env.example`. Without a key the app still works; the AI
+button simply explains how to configure one.
+
 ## Example Use Case
 
 Imagine a student researcher collecting questionnaire data about student consumption and fitness behavior. With SurveyMind, they can upload the survey export and immediately:

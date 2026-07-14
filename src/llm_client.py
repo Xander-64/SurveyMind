@@ -1,81 +1,107 @@
+"""Cloud LLM client using the OpenAI-compatible chat-completions format.
+
+Provider, model and API key all come from environment variables (loaded from
+the project's .env file — see .env.example):
+
+    LLM_API_KEY   your API key. NEVER hardcode it or commit it to git.
+    LLM_BASE_URL  API root, e.g. https://api.deepseek.com/v1
+    LLM_MODEL     model name, e.g. deepseek-chat
+
+Because DeepSeek, Kimi, Zhipu GLM and Anthropic's OpenAI-compatible layer all
+speak this format, switching providers only means editing .env — no code
+changes.
+
+Two calling styles are provided:
+
+- ``ask_llm(prompt)``: raises on failure. Used by the FastAPI backend, which
+  turns errors into explicit HTTP responses. Do not change its behavior — the
+  deployed service depends on it.
+- ``call_llm(system_prompt, user_prompt)``: returns ``None`` on any failure.
+  Used by the Streamlit AI-interpretation layer (src/ai_report.py), which
+  degrades gracefully when the LLM is unavailable.
+"""
 from __future__ import annotations
 
-import json
 import os
-import urllib.error
-import urllib.request
-from pathlib import Path
+
+import httpx
+
+DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+DEFAULT_MODEL = "deepseek-chat"
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ENV_FILE_PATH = PROJECT_ROOT / ".env"
-
-LLM_CONFIG_KEYS = ("LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL")
-
-
-def _read_env_file(path: Path = ENV_FILE_PATH) -> dict[str, str]:
-    values: dict[str, str] = {}
-    try:
-        content = path.read_text(encoding="utf-8")
-    except OSError:
-        return values
-    for line in content.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        values[key.strip()] = value.strip().strip("\"'")
-    return values
+class LLMNotConfiguredError(RuntimeError):
+    """Raised when ask_llm is called without an API key configured."""
 
 
 def get_llm_config() -> dict[str, str]:
-    """Read LLM settings from environment variables, falling back to .env."""
-    file_values = _read_env_file()
-    return {key: os.environ.get(key) or file_values.get(key, "") for key in LLM_CONFIG_KEYS}
+    return {
+        "api_key": os.getenv("LLM_API_KEY", "").strip(),
+        "base_url": os.getenv("LLM_BASE_URL", DEFAULT_BASE_URL).strip().rstrip("/"),
+        "model": os.getenv("LLM_MODEL", DEFAULT_MODEL).strip(),
+    }
 
 
-def is_llm_configured(config: dict[str, str] | None = None) -> bool:
-    config = config or get_llm_config()
-    return bool(config.get("LLM_API_KEY") and config.get("LLM_BASE_URL") and config.get("LLM_MODEL"))
+def is_llm_configured() -> bool:
+    return bool(get_llm_config()["api_key"])
+
+
+def ask_llm(prompt: str, timeout: float = 120.0) -> str:
+    """Send one user prompt to the configured LLM and return the reply text."""
+    config = get_llm_config()
+    if not config["api_key"]:
+        raise LLMNotConfiguredError(
+            "LLM_API_KEY is not set. Copy .env.example to .env and fill in your key."
+        )
+
+    response = httpx.post(
+        config["base_url"] + "/chat/completions",
+        headers={"Authorization": "Bearer " + config["api_key"]},
+        json={
+            "model": config["model"],
+            "messages": [{"role": "user", "content": prompt}],
+        },
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    choices = data.get("choices") or [{}]
+    content = choices[0].get("message", {}).get("content", "")
+    if not isinstance(content, str) or not content.strip():
+        raise RuntimeError("The LLM returned an empty response.")
+    return content.strip()
 
 
 def call_llm(
     system_prompt: str,
     user_prompt: str,
-    config: dict[str, str] | None = None,
     temperature: float = 0.2,
-    timeout: int = 90,
+    timeout: float = 90.0,
 ) -> str | None:
-    """Call an OpenAI-compatible chat endpoint. Returns None on any failure."""
-    config = config or get_llm_config()
-    if not is_llm_configured(config):
+    """System+user chat call that returns None on any failure instead of raising."""
+    config = get_llm_config()
+    if not config["api_key"]:
         return None
 
-    base_url = config["LLM_BASE_URL"].rstrip("/")
-    endpoint = f"{base_url}/chat/completions"
-    payload = {
-        "model": config["LLM_MODEL"],
-        "temperature": temperature,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    }
-
-    request = urllib.request.Request(
-        endpoint,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {config['LLM_API_KEY']}",
-        },
-        method="POST",
-    )
-
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            body = json.loads(response.read().decode("utf-8"))
-        content = body["choices"][0]["message"]["content"]
+        response = httpx.post(
+            config["base_url"] + "/chat/completions",
+            headers={"Authorization": "Bearer " + config["api_key"]},
+            json={
+                "model": config["model"],
+                "temperature": temperature,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        data = response.json()
+        choices = data.get("choices") or [{}]
+        content = choices[0].get("message", {}).get("content", "")
         return content.strip() if isinstance(content, str) and content.strip() else None
-    except (urllib.error.URLError, urllib.error.HTTPError, KeyError, IndexError, TypeError, ValueError, OSError):
+    except Exception:
         return None

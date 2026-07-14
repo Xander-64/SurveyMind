@@ -1,0 +1,15 @@
+# Keep GitHub language statistics honest: the project is primarily a Python
+# analysis backend; design-tool exports should not dominate the language bar.
+
+# Original design mockup exported from the design tool (read-only reference)
+design/** linguist-vendored
+
+# frontend/index.html is unpacked/generated from the design bundle, not
+# hand-written (linguist-generated also collapses its diff in PRs)
+frontend/index.html linguist-generated
+
+# Fonts and the design tool's own nav script
+frontend/assets/** linguist-vendored
+
+# NOTE: frontend/data.js is intentionally NOT excluded — it is hand-written
+# data-layer code and should count toward JavaScript.

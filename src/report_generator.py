@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from src.analysis_suggestions import generate_analysis_suggestions
 from src.dataset_mode import DATASET_MODE_GENERAL, DATASET_MODE_MIXED, DATASET_MODE_SURVEY
@@ -35,6 +37,100 @@ def _bullet(text: str) -> str:
 
 def _numbered(items: list[str]) -> str:
     return "\n\n".join(f"{index}. {item}" for index, item in enumerate(items, start=1))
+
+
+def _to_python_scalar(value: Any) -> Any:
+    """Convert pandas / numpy scalars into JSON-friendly Python values."""
+    if pd.isna(value):
+        return None
+    if hasattr(value, "item"):
+        try:
+            return value.item()
+        except (TypeError, ValueError):
+            return value
+    return value
+
+
+def build_dataset_summary(df: pd.DataFrame) -> dict[str, Any]:
+    """Build a compact structured summary for LLM-based report generation."""
+    dataset_summary: dict[str, Any] = {
+        "row_count": int(len(df)),
+        "column_count": int(len(df.columns)),
+        "average_missing_ratio": round(float(df.isna().mean().mean()), 4) if len(df.columns) else 0.0,
+        "columns": {},
+    }
+
+    for column in df.columns:
+        series = df[column]
+        non_null_count = int(series.notna().sum())
+        missing_count = int(series.isna().sum())
+
+        column_summary: dict[str, Any] = {
+            "dtype": str(series.dtype),
+            "non_null_count": non_null_count,
+            "missing_count": missing_count,
+        }
+
+        coerced_numeric = pd.to_numeric(series, errors="coerce")
+        numeric_series = coerced_numeric.dropna()
+        numeric_ratio = len(numeric_series) / non_null_count if non_null_count else 0
+
+        if is_numeric_dtype(series) or numeric_ratio >= 0.9:
+            column_summary["data_kind"] = "numeric"
+            column_summary.update(
+                {
+                    "mean": round(float(numeric_series.mean()), 4) if not numeric_series.empty else None,
+                    "median": round(float(numeric_series.median()), 4) if not numeric_series.empty else None,
+                    "std": round(float(numeric_series.std()), 4) if not numeric_series.empty else None,
+                    "min": round(float(numeric_series.min()), 4) if not numeric_series.empty else None,
+                    "max": round(float(numeric_series.max()), 4) if not numeric_series.empty else None,
+                }
+            )
+        else:
+            top_values = series.dropna().astype(str).value_counts().head(10)
+            column_summary["data_kind"] = "categorical"
+            column_summary["top_values"] = [
+                {
+                    "value": str(index),
+                    "count": int(count),
+                }
+                for index, count in top_values.items()
+            ]
+
+        dataset_summary["columns"][str(column)] = column_summary
+
+    return dataset_summary
+
+
+def build_llm_prompt(summary: dict[str, Any]) -> str:
+    """Create a Chinese prompt that constrains the local model to interpretation only."""
+    summary_json = json.dumps(summary, ensure_ascii=False, indent=2, default=_to_python_scalar)
+    return f"""你是一名中文问卷分析师。请基于下面给出的结构化统计摘要，生成一份中文 Markdown 问卷分析报告。
+
+严格要求：
+1. 只能使用提供的统计摘要进行解释，不得编造任何数据。
+2. 不要重新计算原始数据，不要假装看过原始问卷或样本明细。
+3. 如果某列只有缺失情况或高频值信息，就只按这些信息解读。
+4. 不要做因果推断、群体动机推断或超出数据证据的结论。
+5. 如果信息不足，请直接说明“根据当前统计摘要无法进一步判断”。
+6. 输出语言必须是中文。
+
+请按以下结构输出：
+- # 问卷分析报告
+- ## 整体概览
+- ## 逐字段分析
+- ## 数据质量提醒
+- ## 总结建议
+
+写作要求：
+- 语气专业、克制、清晰。
+- 可以指出分布集中、缺失较多、均值高低、波动大小等现象。
+- 建议部分必须建立在已提供统计摘要之上，不能引入不存在的数据结论。
+
+以下是结构化统计摘要：
+```json
+{summary_json}
+```"""
 
 
 def _format_dataset_overview(df: pd.DataFrame, language: str) -> str:
@@ -153,24 +249,11 @@ def _build_numeric_findings(df: pd.DataFrame, numeric_summary: pd.DataFrame, lan
 
     findings: list[str] = []
     top_mean_column = numeric_summary["mean"].sort_values(ascending=False).index[0]
-    top_std_column = numeric_summary["std"].fillna(0).sort_values(ascending=False).index[0]
-    numeric_missing = df[numeric_summary.index].isna().mean().sort_values(ascending=False)
-    top_missing_column = numeric_missing.index[0]
 
     if language == "en":
         findings.append(
             _bullet(
                 f"`{top_mean_column}` has the highest mean among numeric questions at {numeric_summary.loc[top_mean_column, 'mean']:.2f}."
-            )
-        )
-        findings.append(
-            _bullet(
-                f"`{top_std_column}` shows the widest spread, with a standard deviation of {numeric_summary.loc[top_std_column, 'std']:.2f}."
-            )
-        )
-        findings.append(
-            _bullet(
-                f"`{top_missing_column}` has the highest missing rate among numeric questions at {numeric_missing.iloc[0] * 100:.2f}%."
             )
         )
     else:
@@ -179,14 +262,34 @@ def _build_numeric_findings(df: pd.DataFrame, numeric_summary: pd.DataFrame, lan
                 f"在数值题中，`{top_mean_column}` 的平均值最高，为 {numeric_summary.loc[top_mean_column, 'mean']:.2f}。"
             )
         )
+
+    # Only report a "widest spread" finding when at least one column has a
+    # real, non-zero standard deviation. With single-value columns every std is
+    # NaN, and the old code printed "std = nan" for an arbitrary column.
+    std_values = numeric_summary["std"].dropna()
+    std_values = std_values[std_values > 0]
+    if not std_values.empty:
+        top_std_column = std_values.sort_values(ascending=False).index[0]
+        top_std_value = numeric_summary.loc[top_std_column, "std"]
         findings.append(
             _bullet(
-                f"`{top_std_column}` 的离散程度最大，标准差为 {numeric_summary.loc[top_std_column, 'std']:.2f}。"
+                f"`{top_std_column}` shows the widest spread, with a standard deviation of {top_std_value:.2f}."
+                if language == "en"
+                else f"`{top_std_column}` 的离散程度最大，标准差为 {top_std_value:.2f}。"
             )
         )
+
+    # Guard against the summary index containing columns that are no longer in
+    # df (e.g. after renaming) which would raise a KeyError.
+    present_columns = [column for column in numeric_summary.index if column in df.columns]
+    if present_columns:
+        numeric_missing = df[present_columns].isna().mean().sort_values(ascending=False)
+        top_missing_column = numeric_missing.index[0]
         findings.append(
             _bullet(
-                f"在数值题中，`{top_missing_column}` 的缺失率最高，为 {numeric_missing.iloc[0] * 100:.2f}%。"
+                f"`{top_missing_column}` has the highest missing rate among numeric questions at {numeric_missing.iloc[0] * 100:.2f}%."
+                if language == "en"
+                else f"在数值题中，`{top_missing_column}` 的缺失率最高，为 {numeric_missing.iloc[0] * 100:.2f}%。"
             )
         )
 
@@ -213,35 +316,42 @@ def _build_scale_findings(scale_summary: pd.DataFrame, language: str) -> list[st
     if scale_summary.empty:
         return []
 
+    numeric_scale_summary = scale_summary.copy()
+    numeric_scale_summary["mean"] = pd.to_numeric(numeric_scale_summary["mean"], errors="coerce")
+    numeric_scale_summary["median"] = pd.to_numeric(numeric_scale_summary["median"], errors="coerce")
+    numeric_scale_summary = numeric_scale_summary.dropna(subset=["mean", "median"])
+    if numeric_scale_summary.empty:
+        return [_bullet("Insufficient data")]
+
     findings: list[str] = []
-    top_scale_column = scale_summary["mean"].sort_values(ascending=False).index[0]
-    top_scale_level = translate_scale_level(language, scale_summary.loc[top_scale_column, "interpretation"])
+    top_scale_column = numeric_scale_summary["mean"].sort_values(ascending=False).index[0]
+    top_scale_level = translate_scale_level(language, numeric_scale_summary.loc[top_scale_column, "interpretation"])
 
     if language == "en":
         findings.append(
             _bullet(
-                f"`{top_scale_column}` has the highest average among scale questions at {scale_summary.loc[top_scale_column, 'mean']:.2f}, which is {top_scale_level}."
+                f"`{top_scale_column}` has the highest average among scale questions at {numeric_scale_summary.loc[top_scale_column, 'mean']:.2f}, which is {top_scale_level}."
             )
         )
     else:
         findings.append(
             _bullet(
-                f"在量表题中，`{top_scale_column}` 的平均分最高，为 {scale_summary.loc[top_scale_column, 'mean']:.2f}，整体水平为 {top_scale_level}。"
+                f"在量表题中，`{top_scale_column}` 的平均分最高，为 {numeric_scale_summary.loc[top_scale_column, 'mean']:.2f}，整体水平为 {top_scale_level}。"
             )
         )
 
-    for column in scale_summary.index[:3]:
-        level = translate_scale_level(language, scale_summary.loc[column, "interpretation"])
+    for column in numeric_scale_summary.index[:3]:
+        level = translate_scale_level(language, numeric_scale_summary.loc[column, "interpretation"])
         if language == "en":
             findings.append(
                 _bullet(
-                    f"`{column}` has a mean of {scale_summary.loc[column, 'mean']:.2f}, a median of {scale_summary.loc[column, 'median']:.2f}, and an overall interpretation of {level}."
+                    f"`{column}` has a mean of {numeric_scale_summary.loc[column, 'mean']:.2f}, a median of {numeric_scale_summary.loc[column, 'median']:.2f}, and an overall interpretation of {level}."
                 )
             )
         else:
             findings.append(
                 _bullet(
-                    f"`{column}` 的平均分为 {scale_summary.loc[column, 'mean']:.2f}，中位数为 {scale_summary.loc[column, 'median']:.2f}，整体可解释为 {level}。"
+                    f"`{column}` 的平均分为 {numeric_scale_summary.loc[column, 'mean']:.2f}，中位数为 {numeric_scale_summary.loc[column, 'median']:.2f}，整体可解释为 {level}。"
                 )
             )
 
@@ -559,10 +669,14 @@ def _build_recommendations(
 
     if not scale_summary.empty:
         scale_priority = scale_summary.copy()
+        scale_priority["mean"] = pd.to_numeric(scale_priority["mean"], errors="coerce")
+        scale_priority = scale_priority.dropna(subset=["mean"])
         order_map = {"low": 0, "moderate": 1, "high": 2}
         scale_priority["priority"] = scale_priority["interpretation"].map(order_map)
-        best_scale = scale_priority.sort_values(["priority", "mean"]).iloc[0]
-        recommendations.append(_build_scale_recommendation(best_scale.name, best_scale, language))
+        scale_priority = scale_priority.dropna(subset=["priority"])
+        if not scale_priority.empty:
+            best_scale = scale_priority.sort_values(["priority", "mean"]).iloc[0]
+            recommendations.append(_build_scale_recommendation(best_scale.name, best_scale, language))
 
     multiple_choice_columns = [
         column
@@ -915,8 +1029,3 @@ def generate_report(
             language,
         )
     return generate_general_report(df, semantics or {}, overview or {}, language)
-
-
-def generate_llm_enhanced_report(_: dict[str, Any]) -> str:
-    """Deprecated placeholder kept for import compatibility; see src.ai_report."""
-    raise NotImplementedError("Use src.ai_report.generate_ai_report instead.")

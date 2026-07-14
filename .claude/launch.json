@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "surveymind",
+      "runtimeExecutable": "/opt/anaconda3/bin/python",
+      "runtimeArgs": ["-m", "streamlit", "run", "app.py", "--server.port", "8599", "--server.headless", "true"],
+      "port": 8599
+    }
+  ]
+}

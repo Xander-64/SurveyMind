@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 from io import BytesIO
 from pathlib import Path
 from zipfile import BadZipFile
@@ -46,7 +47,16 @@ from src.i18n import (
     translate_scale_level,
 )
 from src.llm_client import is_llm_configured
+
+# Load .env so LLM_API_KEY etc. are available (optional convenience dependency).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 from src.question_type_detector import (
+    QUESTION_TYPE_EMPTY,
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
@@ -76,9 +86,11 @@ st.set_page_config(page_title=t(st.session_state["language"], "page_title"), pag
 SUPPORTED_UPLOAD_SUFFIXES = {".csv", ".xlsx", ".xls"}
 
 
+# The strict survey preprocessing (which drops ID/timestamp columns) moved to
+# src/preprocessing.py and still powers the FastAPI backend unchanged. The
+# Streamlit platform keeps every column: field-semantics detection assigns
+# identifier/datetime roles instead of dropping the data.
 def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    # ID and timestamp columns are kept: field-semantics detection assigns
-    # them identifier/datetime roles instead of treating them as questions.
     cleaned_df = df.copy()
     cleaned_df.columns = [str(column).strip() if column is not None else "" for column in cleaned_df.columns]
     cleaned_df = cleaned_df.replace(r"^\s*$", pd.NA, regex=True)
@@ -97,13 +109,9 @@ def get_demo_data():
 
 @st.cache_data
 def get_uploaded_data(file_bytes: bytes, filename: str):
-    suffix = Path(filename).suffix.lower()
-    try:
-        return preprocess_input_dataframe(load_uploaded_dataset(file_bytes, filename))
-    except pd.errors.ParserError:
-        if suffix != ".csv":
-            raise
-        return preprocess_input_dataframe(pd.read_csv(BytesIO(file_bytes), engine="python", on_bad_lines="skip"))
+    # Loading (incl. the tolerant-CSV fallback) and cleaning both live in src/
+    # so the API layer produces byte-identical results to the Streamlit app.
+    return preprocess_input_dataframe(load_uploaded_dataset(file_bytes, filename))
 
 
 def get_upload_error_message(exc: Exception) -> str:
@@ -184,6 +192,128 @@ def render_plotly_chart_safely(build_figure, empty_message: str, error_message: 
     except Exception:
         st.warning(error_message)
         return False
+
+
+# --- Visual theme ported from the Claude Design mockup -----------------------
+# Colors, fonts, card styling, spacing, and the five question-type badge colors
+# come from design/SurveyMind 数据分析界面.html. This only affects presentation;
+# the analysis logic in src/ is untouched.
+THEME_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --sm-bg:#FAFBFC; --sm-surface:#FFFFFF; --sm-surface-3:#F1F4F8;
+  --sm-ink:#1A1F29; --sm-ink-2:#4A5260; --sm-ink-3:#6B7280; --sm-muted:#8A92A0;
+  --sm-accent:#3E5C99; --sm-accent-700:#2B4475;
+  --sm-accent-soft:#ECF1F9; --sm-accent-line:#C2D1EA;
+  --sm-line:#EAEDF1; --sm-line-2:#E0E4EA;
+  --sm-r-md:12px; --sm-r-sm:6px;
+  --sm-sh:0 1px 2px rgba(20,30,50,.04), 0 4px 10px -2px rgba(20,30,50,.05);
+}
+
+html, body, .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMarkdownContainer"], .stMarkdown, button, input, textarea, select {
+  font-family:'Albert Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+.stApp { background:var(--sm-bg); color:var(--sm-ink); }
+.block-container { padding-top:2.4rem; padding-bottom:3rem; }
+
+h1, h2, h3 { color:var(--sm-ink); font-weight:700; letter-spacing:-0.01em; }
+/* Accent rule on section headers for the design's structured feel */
+[data-testid="stHeading"] h2 {
+  border-left:3px solid var(--sm-accent);
+  padding-left:12px; margin-top:.5rem;
+}
+
+code, pre, kbd, [data-testid="stCodeBlock"], .stCode {
+  font-family:'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+}
+
+/* Metric cards */
+[data-testid="stMetric"] {
+  background:var(--sm-surface); border:1px solid var(--sm-line);
+  border-radius:var(--sm-r-md); padding:14px 18px; box-shadow:var(--sm-sh);
+}
+[data-testid="stMetricValue"] { color:var(--sm-accent); font-weight:700; }
+[data-testid="stMetricLabel"] { color:var(--sm-ink-3); }
+
+/* Sidebar as a clean white surface */
+[data-testid="stSidebar"] {
+  background:var(--sm-surface); border-right:1px solid var(--sm-line);
+}
+
+/* Expanders and tables as cards */
+[data-testid="stExpander"] {
+  border:1px solid var(--sm-line); border-radius:var(--sm-r-md);
+  background:var(--sm-surface); box-shadow:var(--sm-sh);
+}
+[data-testid="stDataFrame"] {
+  border:1px solid var(--sm-line); border-radius:var(--sm-r-md); overflow:hidden;
+}
+
+/* Primary buttons */
+.stButton > button {
+  background:var(--sm-accent); color:#fff; font-weight:600;
+  border:1px solid var(--sm-accent); border-radius:var(--sm-r-sm);
+}
+.stButton > button:hover { background:var(--sm-accent-700); border-color:var(--sm-accent-700); color:#fff; }
+.stDownloadButton > button {
+  background:var(--sm-accent-soft); color:var(--sm-accent-700); font-weight:600;
+  border:1px solid var(--sm-accent-line); border-radius:var(--sm-r-sm);
+}
+.stDownloadButton > button:hover { background:#E0E9F6; color:var(--sm-accent-700); }
+
+/* Tabs accent */
+.stTabs [data-baseweb="tab-list"] { gap:4px; }
+.stTabs [aria-selected="true"] { color:var(--sm-accent); }
+
+/* Question-type badges (five categories) */
+.sm-badges { display:flex; flex-wrap:wrap; gap:8px; margin:.4rem 0 1rem; }
+.sm-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:12px; font-weight:600; padding:5px 11px;
+  border-radius:7px; white-space:nowrap; line-height:1.5;
+}
+.sm-badge .sm-dot { width:6px; height:6px; border-radius:50%; flex:none; }
+.sm-badge .sm-type { font-weight:500; opacity:.8; }
+.sm-badge.num    { background:#E9EFFB; color:#2F569E; } .sm-badge.num    .sm-dot { background:#3E5C99; }
+.sm-badge.scale  { background:#E0F0EA; color:#1C7355; } .sm-badge.scale  .sm-dot { background:#2A8C6A; }
+.sm-badge.single { background:#ECE8FA; color:#5B45A8; } .sm-badge.single .sm-dot { background:#6B54BE; }
+.sm-badge.multi  { background:#FBEFD9; color:#8A5A12; } .sm-badge.multi  .sm-dot { background:#C68A2E; }
+.sm-badge.open   { background:#FAE7EC; color:#9C4763; } .sm-badge.open   .sm-dot { background:#BC5E78; }
+.sm-badge.empty  { background:#F1F4F8; color:#6B7280; } .sm-badge.empty  .sm-dot { background:#A9B0BC; }
+</style>
+"""
+
+# Maps each detected question type to its badge color class above.
+QUESTION_TYPE_BADGE_CLASS = {
+    QUESTION_TYPE_NUMERIC: "num",
+    QUESTION_TYPE_SCALE: "scale",
+    QUESTION_TYPE_SINGLE: "single",
+    QUESTION_TYPE_MULTIPLE: "multi",
+    QUESTION_TYPE_OPEN: "open",
+    QUESTION_TYPE_EMPTY: "empty",
+}
+
+
+def inject_theme_css() -> None:
+    """Apply the SurveyMind visual theme once per page render."""
+    st.markdown(THEME_CSS, unsafe_allow_html=True)
+
+
+def render_type_badges(detected_question_types: dict[str, str], language: str) -> None:
+    """Show each column as a colored badge keyed to its detected question type."""
+    badges = []
+    for column, q_type in detected_question_types.items():
+        css_class = QUESTION_TYPE_BADGE_CLASS.get(q_type, "empty")
+        type_label = html.escape(translate_question_type(language, q_type))
+        column_label = html.escape(str(column))
+        badges.append(
+            f'<span class="sm-badge {css_class}"><span class="sm-dot"></span>'
+            f"{column_label}<span class=\"sm-type\"> · {type_label}</span></span>"
+        )
+    st.markdown(f'<div class="sm-badges">{"".join(badges)}</div>', unsafe_allow_html=True)
 
 
 def render_sidebar() -> str:
@@ -514,6 +644,8 @@ def render_question_detection(
     if not detected_question_types:
         st.warning("Question type detection did not return any columns to display.")
         return {}
+
+    render_type_badges(detected_question_types, language)
 
     if st.button(t(language, "reset_overrides")):
         for column, detected_type in detected_question_types.items():
@@ -900,6 +1032,7 @@ def render_report(
 
 
 def main():
+    inject_theme_css()
     language = render_sidebar()
     render_intro(language)
     uploaded_file = render_data_upload(language)
