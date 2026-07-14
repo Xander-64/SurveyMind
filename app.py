@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from io import BytesIO
 from pathlib import Path
 from zipfile import BadZipFile
@@ -8,32 +7,63 @@ from zipfile import BadZipFile
 import pandas as pd
 import streamlit as st
 
+from src.ai_report import AI_STATUS_FAILED, AI_STATUS_NOT_CONFIGURED, AI_STATUS_OK, generate_ai_report
+from src.analysis_suggestions import generate_analysis_suggestions
+from src.chart_recommender import (
+    CHART_CATEGORICAL_BAR,
+    CHART_CORRELATION_HEATMAP,
+    CHART_GROUPED_BOX,
+    CHART_NUMERIC_HISTOGRAM,
+    CHART_TIME_TREND,
+    recommend_charts,
+)
 from src.cross_analysis import analyze_cross_relationship
-from src.data_loader import DEFAULT_DEMO_PATH, get_dataset_overview, load_demo_dataset, load_uploaded_dataset
+from src.data_loader import DEFAULT_DEMO_PATH, load_demo_dataset, load_uploaded_dataset
+from src.dataset_mode import (
+    DATASET_MODE_MIXED,
+    DATASET_MODE_OPTIONS,
+    DATASET_MODE_SURVEY,
+    derive_analysis_types,
+    derive_question_types,
+    detect_dataset_mode,
+)
 from src.descriptive_analysis import generate_descriptive_results
+from src.field_semantics import (
+    apply_role_overrides,
+    detect_field_semantics,
+    field_semantics_to_frame,
+    get_field_role_options,
+)
+from src.general_overview import build_overview_findings, generate_general_overview
 from src.i18n import (
     DEFAULT_LANGUAGE,
     LANGUAGE_OPTIONS,
     get_language_label,
     t,
+    translate_dataset_mode,
+    translate_field_role,
     translate_question_type,
     translate_scale_level,
 )
+from src.llm_client import is_llm_configured
 from src.question_type_detector import (
+    QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
     QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
-    detect_question_types,
+    QUESTION_TYPE_SINGLE,
     get_question_type_options,
     question_types_to_frame,
 )
-from src.report_generator import generate_markdown_report
+from src.report_generator import generate_report
 from src.visualization import (
     build_categorical_bar_chart,
+    build_correlation_heatmap,
     build_crosstab_chart,
     build_grouped_box_plot,
     build_numeric_histogram,
     build_scale_bar_chart,
+    build_time_trend_chart,
 )
 
 
@@ -44,29 +74,18 @@ st.set_page_config(page_title=t(st.session_state["language"], "page_title"), pag
 
 
 SUPPORTED_UPLOAD_SUFFIXES = {".csv", ".xlsx", ".xls"}
-METADATA_COLUMN_PATTERN = re.compile(r"(?<![A-Z])ID(?![A-Z])", re.IGNORECASE)
-METADATA_COLUMN_KEYWORDS = ("时间", "编号")
-
-
-def is_metadata_column(column_name: str) -> bool:
-    stripped_name = column_name.strip()
-    return any(keyword in stripped_name for keyword in METADATA_COLUMN_KEYWORDS) or bool(
-        METADATA_COLUMN_PATTERN.search(stripped_name)
-    )
 
 
 def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    # ID and timestamp columns are kept: field-semantics detection assigns
+    # them identifier/datetime roles instead of treating them as questions.
     cleaned_df = df.copy()
     cleaned_df.columns = [str(column).strip() if column is not None else "" for column in cleaned_df.columns]
     cleaned_df = cleaned_df.replace(r"^\s*$", pd.NA, regex=True)
 
-    metadata_columns = [column for column in cleaned_df.columns if is_metadata_column(column)]
-    if metadata_columns:
-        cleaned_df = cleaned_df.drop(columns=metadata_columns, errors="ignore")
-
     cleaned_df = cleaned_df.dropna(axis=1, how="all")
     if cleaned_df.shape[1] == 0:
-        raise ValueError("No usable survey columns remain after preprocessing.")
+        raise ValueError("No usable data columns remain after preprocessing.")
 
     return cleaned_df
 
@@ -90,8 +109,8 @@ def get_uploaded_data(file_bytes: bytes, filename: str):
 def get_upload_error_message(exc: Exception) -> str:
     if isinstance(exc, pd.errors.EmptyDataError):
         return "The uploaded file is empty. Please upload a non-empty CSV or Excel file."
-    if isinstance(exc, ValueError) and "No usable survey columns remain" in str(exc):
-        return "No usable survey columns remain after preprocessing. Please upload a file with survey response columns."
+    if isinstance(exc, ValueError) and "No usable data columns remain" in str(exc):
+        return "No usable data columns remain after preprocessing. Please upload a file that contains at least one non-empty column."
     if isinstance(exc, ValueError) and "Unsupported file type" in str(exc):
         return "Unsupported file type. Please upload a CSV or Excel file."
     if isinstance(exc, (BadZipFile, UnicodeDecodeError, OSError, ValueError, ImportError)):
@@ -222,38 +241,273 @@ def render_data_upload(language: str):
     )
 
 
-def render_data_overview(df, language: str):
+def render_mode_selector(mode_result, language: str, dataset_key: str) -> str:
+    st.header(t(language, "section_mode_detection"))
+    st.markdown(
+        t(
+            language,
+            "mode_detected_caption",
+            mode=translate_dataset_mode(language, mode_result.mode),
+            survey_score=mode_result.survey_score,
+            general_score=mode_result.general_score,
+        )
+    )
+    if mode_result.signals:
+        with st.expander(t(language, "mode_signals_label"), expanded=False):
+            for signal in mode_result.signals:
+                st.markdown(f"- {signal}")
+
+    state_key = f"dataset_mode_override::{dataset_key}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = mode_result.mode
+    if st.session_state[state_key] not in DATASET_MODE_OPTIONS:
+        st.session_state[state_key] = mode_result.mode
+
+    return st.radio(
+        t(language, "mode_override_label"),
+        options=DATASET_MODE_OPTIONS,
+        horizontal=True,
+        format_func=lambda value: translate_dataset_mode(language, value),
+        key=state_key,
+    )
+
+
+def render_field_roles(df, semantics, language: str, dataset_key: str):
+    st.header(t(language, "section_field_roles"))
+    st.write(t(language, "field_roles_desc"))
+
+    role_options = get_field_role_options()
+
+    if st.button(t(language, "reset_field_roles")):
+        for column, profile in semantics.items():
+            st.session_state[f"field_role_override::{dataset_key}::{column}"] = profile.role
+
+    overrides: dict[str, str] = {}
+    with st.expander(t(language, "manual_role_override"), expanded=False):
+        override_columns = st.columns(2)
+        for index, (column, profile) in enumerate(semantics.items()):
+            state_key = f"field_role_override::{dataset_key}::{column}"
+            if state_key not in st.session_state or st.session_state[state_key] not in role_options:
+                st.session_state[state_key] = profile.role if profile.role in role_options else role_options[0]
+            with override_columns[index % 2]:
+                overrides[column] = st.selectbox(
+                    label=column,
+                    options=role_options,
+                    key=state_key,
+                    format_func=lambda value: translate_field_role(language, value),
+                    help=t(language, "detected_as_help", question_type=translate_field_role(language, profile.role)),
+                )
+
+    active_semantics = apply_role_overrides(semantics, overrides)
+
+    display_frame = field_semantics_to_frame(semantics, {column: p.role for column, p in active_semantics.items()})
+    display_frame["detected_role"] = display_frame["detected_role"].map(lambda value: translate_field_role(language, value))
+    display_frame["active_role"] = display_frame["active_role"].map(lambda value: translate_field_role(language, value))
+    display_frame = display_frame.rename(
+        columns={
+            "column_name": t(language, "column_name_label"),
+            "detected_role": t(language, "detected_role_label"),
+            "active_role": t(language, "active_role_label"),
+            "evidence": t(language, "evidence_label"),
+        }
+    )
+    render_dataframe_or_warning(display_frame, "Field role results are unavailable.")
+    return active_semantics
+
+
+def render_general_overview_section(df, overview, semantics, language: str):
     st.header(t(language, "section_data_overview"))
 
-    if not isinstance(df, pd.DataFrame) or df.empty or df.shape[1] == 0:
-        st.warning("No dataset is available to display.")
-        return
-
-    try:
-        overview = get_dataset_overview(df)
-    except Exception:
-        st.warning("Data overview is unavailable for the current dataset.")
-        return
-
-    col1, col2, col3 = st.columns(3)
+    quality = overview.get("quality", {})
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric(t(language, "metric_rows"), overview["shape"][0])
     col2.metric(t(language, "metric_columns"), overview["shape"][1])
-    col3.metric(t(language, "metric_missing_ratio"), f"{df.isna().mean().mean() * 100:.2f}%")
+    col3.metric(t(language, "metric_missing_ratio"), f"{quality.get('overall_missing_pct', 0):.2f}%")
+    col4.metric(t(language, "metric_duplicates"), quality.get("duplicate_rows", 0))
 
     st.write(f"**{t(language, 'first_five_rows')}**")
     render_dataframe_or_warning(overview.get("preview"), "Dataset preview is unavailable.")
 
-    meta_col1, meta_col2 = st.columns([1, 2])
-    with meta_col1:
-        st.write(f"**{t(language, 'column_names')}**")
-        columns_frame = pd.DataFrame({t(language, "column_name_label"): overview.get("columns", [])})
-        render_dataframe_or_warning(columns_frame, "Column names are unavailable.")
-    with meta_col2:
-        st.write(f"**{t(language, 'column_metadata')}**")
-        render_dataframe_or_warning(overview.get("overview_table"), "Column metadata is unavailable.")
+    tab_fields, tab_numeric, tab_categorical, tab_datetime, tab_relations, tab_quality = st.tabs(
+        [
+            t(language, "overview_tab_fields"),
+            t(language, "overview_tab_numeric"),
+            t(language, "overview_tab_categorical"),
+            t(language, "overview_tab_datetime"),
+            t(language, "overview_tab_relations"),
+            t(language, "overview_tab_quality"),
+        ]
+    )
+
+    with tab_fields:
+        role_table = overview.get("field_role_table")
+        if has_display_data(role_table):
+            localized = role_table.copy()
+            localized["role"] = localized["role"].map(lambda value: translate_field_role(language, value))
+            render_dataframe_or_warning(localized, "Field table is unavailable.")
+        else:
+            st.warning("Field table is unavailable.")
+
+    with tab_numeric:
+        render_dataframe_or_warning(overview.get("numeric_summary"), t(language, "no_numeric_fields"))
+
+    with tab_categorical:
+        categorical_summary = overview.get("categorical_summary") or {}
+        if not categorical_summary:
+            st.warning(t(language, "no_categorical_fields"))
+        else:
+            selected_column = st.selectbox(
+                t(language, "choose_categorical_field"),
+                list(categorical_summary.keys()),
+                key="overview_categorical_column",
+            )
+            render_dataframe_or_warning(categorical_summary.get(selected_column), t(language, "no_categorical_fields"))
+
+    with tab_datetime:
+        render_dataframe_or_warning(overview.get("datetime_summary"), t(language, "no_datetime_fields"))
+
+    with tab_relations:
+        correlations = overview.get("correlations")
+        group_differences = overview.get("group_differences")
+        shown = False
+        if has_display_data(correlations):
+            st.write(f"**{t(language, 'correlations_title')}**")
+            render_dataframe_or_warning(correlations, t(language, "no_relations"))
+            shown = True
+        if has_display_data(group_differences):
+            st.write(f"**{t(language, 'group_differences_title')}**")
+            render_dataframe_or_warning(group_differences, t(language, "no_relations"))
+            shown = True
+        if not shown:
+            st.info(t(language, "no_relations"))
+
+    with tab_quality:
+        high_missing = quality.get("high_missing")
+        if isinstance(high_missing, pd.Series) and len(high_missing) > 0:
+            missing_frame = (high_missing * 100).round(2).rename_axis(t(language, "column_name_label")).reset_index(
+                name=t(language, "metric_missing_ratio")
+            )
+            render_dataframe_or_warning(missing_frame, "Missing-value details are unavailable.")
+        unusable = quality.get("unusable_columns") or []
+        if unusable:
+            st.warning(", ".join(f"`{column}`" for column in unusable))
+
+    try:
+        findings = build_overview_findings(df, overview, language)
+    except Exception:
+        findings = []
+    if findings:
+        st.write(f"**{t(language, 'overview_findings_title')}**")
+        st.markdown("\n".join(f"- {finding}" for finding in findings))
 
 
-def render_question_detection(detected_question_types: dict[str, str], language: str) -> dict[str, str]:
+def render_suggestions_section(df, semantics, overview, language: str):
+    st.header(t(language, "section_suggestions"))
+    try:
+        suggestions = generate_analysis_suggestions(df, semantics, overview, language)
+    except Exception:
+        suggestions = []
+    if not suggestions:
+        st.info(t(language, "no_data_insufficient"))
+        return
+    st.write(t(language, "suggestions_desc"))
+    st.markdown("\n".join(f"{index}. {suggestion}" for index, suggestion in enumerate(suggestions, start=1)))
+
+
+def render_recommended_charts_section(df, semantics, overview, language: str):
+    st.header(t(language, "section_recommended_charts"))
+    try:
+        chart_specs = recommend_charts(df, semantics, overview)
+    except Exception:
+        chart_specs = []
+    if not chart_specs:
+        st.info(t(language, "no_recommended_charts"))
+        return
+
+    grid = st.columns(2)
+    for index, spec in enumerate(chart_specs):
+        kind = spec.get("kind")
+        with grid[index % 2]:
+            if kind == CHART_TIME_TREND:
+                trend_df = (overview.get("time_trends") or {}).get(spec["column"])
+                render_plotly_chart_safely(
+                    lambda trend_df=trend_df, column=spec["column"]: build_time_trend_chart(trend_df, column, language=language),
+                    t(language, "no_recommended_charts"),
+                    "Time trend chart could not be displayed.",
+                    f"recommended_chart::{index}::{spec['column']}",
+                )
+            elif kind == CHART_CORRELATION_HEATMAP:
+                render_plotly_chart_safely(
+                    lambda columns=spec["columns"]: build_correlation_heatmap(df, columns, language=language),
+                    t(language, "no_recommended_charts"),
+                    "Correlation heatmap could not be displayed.",
+                    f"recommended_chart::{index}::correlation",
+                )
+            elif kind == CHART_GROUPED_BOX:
+                render_plotly_chart_safely(
+                    lambda numeric=spec["numeric_column"], group=spec["group_column"]: build_grouped_box_plot(
+                        df, numeric, group, language=language
+                    ),
+                    t(language, "no_recommended_charts"),
+                    "Box plot could not be displayed.",
+                    f"recommended_chart::{index}::box",
+                )
+            elif kind == CHART_NUMERIC_HISTOGRAM:
+                render_plotly_chart_safely(
+                    lambda column=spec["column"]: build_numeric_histogram(df, column, language=language),
+                    t(language, "no_recommended_charts"),
+                    "Histogram could not be displayed.",
+                    f"recommended_chart::{index}::{spec['column']}",
+                )
+            elif kind == CHART_CATEGORICAL_BAR:
+                question_type = QUESTION_TYPE_MULTIPLE if spec.get("is_multi_value") else QUESTION_TYPE_SINGLE
+                render_plotly_chart_safely(
+                    lambda column=spec["column"], q_type=question_type: build_categorical_bar_chart(
+                        df, column, q_type, language=language
+                    ),
+                    t(language, "no_recommended_charts"),
+                    "Bar chart could not be displayed.",
+                    f"recommended_chart::{index}::{spec['column']}",
+                )
+
+
+def render_ai_section(df, mode, language, overview, descriptive_results, question_types, dataset_key: str):
+    st.header(t(language, "section_ai_insights"))
+    persona_key = {
+        "general": "ai_persona_general",
+        "survey": "ai_persona_survey",
+        "mixed": "ai_persona_mixed",
+    }.get(mode, "ai_persona_general")
+    st.caption(t(language, "ai_persona_caption", persona=t(language, persona_key)))
+
+    if not is_llm_configured():
+        st.info(t(language, "ai_not_configured"))
+        return
+
+    result_key = f"ai_report_result::{dataset_key}::{mode}::{language}"
+    if st.button(t(language, "ai_generate_button")):
+        with st.spinner(t(language, "ai_generating")):
+            st.session_state[result_key] = generate_ai_report(
+                df, mode, language, overview, descriptive_results, question_types
+            )
+
+    result = st.session_state.get(result_key)
+    if not result:
+        return
+    if result.get("status") == AI_STATUS_OK:
+        st.caption(t(language, "ai_grounding_note"))
+        st.markdown(result.get("content", ""))
+    elif result.get("status") == AI_STATUS_FAILED:
+        st.warning(t(language, "ai_failed_notice"))
+    elif result.get("status") == AI_STATUS_NOT_CONFIGURED:
+        st.info(t(language, "ai_not_configured"))
+
+
+def render_question_detection(
+    detected_question_types: dict[str, str],
+    language: str,
+    dataset_key: str = "default",
+) -> dict[str, str]:
     st.header(t(language, "section_question_detection"))
     st.write(t(language, "question_detection_desc"))
 
@@ -263,7 +517,7 @@ def render_question_detection(detected_question_types: dict[str, str], language:
 
     if st.button(t(language, "reset_overrides")):
         for column, detected_type in detected_question_types.items():
-            st.session_state[f"question_type_override::{column}"] = detected_type
+            st.session_state[f"question_type_override::{dataset_key}::{column}"] = detected_type
 
     question_type_options = get_question_type_options()
     active_question_types: dict[str, str] = {}
@@ -271,7 +525,7 @@ def render_question_detection(detected_question_types: dict[str, str], language:
     with st.expander(t(language, "manual_override"), expanded=False):
         override_columns = st.columns(2)
         for index, (column, detected_type) in enumerate(detected_question_types.items()):
-            state_key = f"question_type_override::{column}"
+            state_key = f"question_type_override::{dataset_key}::{column}"
             if state_key not in st.session_state:
                 st.session_state[state_key] = detected_type
 
@@ -599,16 +853,28 @@ def render_cross_analysis(df, question_types, language: str):
     return result
 
 
-def render_report(df, question_types, descriptive_results, cross_analysis_result, language: str):
+def render_report(
+    df,
+    mode,
+    question_types,
+    descriptive_results,
+    cross_analysis_result,
+    semantics,
+    overview,
+    language: str,
+):
     st.header(t(language, "section_report"))
 
     try:
-        report_markdown = generate_markdown_report(
+        report_markdown = generate_report(
             df,
-            question_types,
-            descriptive_results,
-            cross_analysis_result,
+            mode,
             language=language,
+            question_types=question_types,
+            descriptive_results=descriptive_results,
+            cross_analysis_result=cross_analysis_result,
+            semantics=semantics,
+            overview=overview,
         )
     except Exception:
         st.warning("Report content is unavailable.")
@@ -644,43 +910,103 @@ def main():
 
     if using_demo:
         st.caption(t(language, "using_demo_caption", filename=DEFAULT_DEMO_PATH.name))
+        dataset_key = "demo"
     else:
         st.caption(t(language, "using_upload_caption", filename=uploaded_file.name))
+        dataset_key = f"{uploaded_file.name}::{df.shape[0]}x{df.shape[1]}"
+
+    semantics = detect_field_semantics(df)
+    mode_result = detect_dataset_mode(df, semantics)
 
     try:
-        render_data_overview(df, language)
+        mode = render_mode_selector(mode_result, language, dataset_key)
+    except Exception:
+        st.warning("Dataset mode selector could not be displayed. Using the detected mode.")
+        mode = mode_result.mode
+
+    try:
+        semantics = render_field_roles(df, semantics, language, dataset_key)
+    except Exception:
+        st.warning("Field role display could not be rendered. Using detected roles.")
+
+    try:
+        overview = generate_general_overview(df, semantics)
+    except Exception:
+        st.warning("Data overview could not be computed.")
+        overview = {"shape": df.shape, "quality": {}, "preview": df.head()}
+
+    try:
+        render_general_overview_section(df, overview, semantics, language)
     except Exception:
         st.warning("Data overview could not be displayed.")
 
-    detected_question_types = detect_question_types(df)
     try:
-        question_types = render_question_detection(detected_question_types, language)
+        render_suggestions_section(df, semantics, overview, language)
     except Exception:
-        st.warning("Question type display could not be rendered. Using detected defaults.")
-        question_types = detected_question_types
-
-    descriptive_results = generate_descriptive_results(df, question_types)
+        st.warning("Analysis suggestions could not be displayed.")
 
     try:
-        render_descriptive_statistics(df, question_types, descriptive_results, language)
+        render_recommended_charts_section(df, semantics, overview, language)
     except Exception:
-        st.warning("Descriptive statistics could not be displayed.")
+        st.warning("Recommended charts could not be displayed.")
+
+    question_types = None
+    descriptive_results = None
+    cross_analysis_result = None
+
+    if mode in {DATASET_MODE_SURVEY, DATASET_MODE_MIXED}:
+        detected_question_types = derive_question_types(df, semantics)
+        try:
+            question_types = render_question_detection(detected_question_types, language, dataset_key)
+        except Exception:
+            st.warning("Question type display could not be rendered. Using detected defaults.")
+            question_types = detected_question_types
+
+        try:
+            descriptive_results = generate_descriptive_results(df, question_types)
+        except Exception:
+            st.warning("Descriptive statistics could not be computed.")
+            descriptive_results = {}
+
+        try:
+            render_descriptive_statistics(df, question_types, descriptive_results, language)
+        except Exception:
+            st.warning("Descriptive statistics could not be displayed.")
+
+        try:
+            render_visualization_explorer(df, question_types, descriptive_results, language)
+        except Exception:
+            st.warning("Visualization section could not be displayed.")
+
+        try:
+            cross_analysis_result = render_cross_analysis(df, question_types, language)
+        except Exception:
+            st.warning("Cross analysis section could not be displayed.")
+    else:
+        analysis_types = derive_analysis_types(semantics)
+        try:
+            cross_analysis_result = render_cross_analysis(df, analysis_types, language)
+        except Exception:
+            st.warning("Cross analysis section could not be displayed.")
 
     try:
-        render_visualization_explorer(df, question_types, descriptive_results, language)
-    except Exception:
-        st.warning("Visualization section could not be displayed.")
-
-    try:
-        cross_analysis_result = render_cross_analysis(df, question_types, language)
-    except Exception:
-        st.warning("Cross analysis section could not be displayed.")
-        cross_analysis_result = None
-
-    try:
-        render_report(df, question_types, descriptive_results, cross_analysis_result, language)
+        render_report(
+            df,
+            mode,
+            question_types,
+            descriptive_results,
+            cross_analysis_result,
+            semantics,
+            overview,
+            language,
+        )
     except Exception:
         st.warning("Report section could not be displayed.")
+
+    try:
+        render_ai_section(df, mode, language, overview, descriptive_results, question_types, dataset_key)
+    except Exception:
+        st.warning("AI interpretation section could not be displayed.")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+from src.field_semantics import (
+    FIELD_ROLE_BOOLEAN,
+    FIELD_ROLE_CATEGORICAL,
+    FIELD_ROLE_DATETIME,
+    FIELD_ROLE_EMPTY,
+    FIELD_ROLE_FREE_TEXT,
+    FIELD_ROLE_IDENTIFIER,
+    FIELD_ROLE_MULTI_VALUE,
+    FIELD_ROLE_NUMERIC,
+)
 from src.question_type_detector import (
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
@@ -18,28 +28,92 @@ TRANSLATIONS = {
         "language_name": "English",
         "page_title": "SurveyMind",
         "app_title": "SurveyMind",
-        "app_subtitle": "AI-powered questionnaire analytics assistant",
+        "app_subtitle": "AI-assisted analytics for surveys and general datasets",
         "app_intro": (
-            "SurveyMind helps explore questionnaire datasets by detecting question types, "
-            "summarizing response patterns, visualizing results, comparing groups, and generating "
-            "a structured markdown report."
+            "SurveyMind analyzes both survey responses and general tabular data. Upload a CSV or "
+            "Excel file and it detects the dataset mode, profiles every field, builds a data "
+            "overview with quality checks and relationships, recommends charts and analyses, and "
+            "generates a structured markdown report."
         ),
         "sidebar_settings": "Settings",
         "sidebar_language": "Language",
         "sidebar_language_help": "Choose the language used in the interface and generated report.",
-        "section_data_upload": "1. Data Upload",
-        "upload_label": "Upload a CSV or Excel questionnaire dataset",
-        "upload_help": "SurveyMind accepts .csv, .xlsx, and .xls files.",
+        "section_data_upload": "Data Upload",
+        "upload_label": "Upload a CSV or Excel dataset",
+        "upload_help": "SurveyMind accepts .csv, .xlsx, and .xls files — survey exports or any tabular data.",
         "using_demo_caption": "Using bundled demo dataset from `{filename}`.",
         "using_upload_caption": "Using uploaded file: `{filename}`",
-        "section_data_overview": "2. Data Overview",
+        "section_mode_detection": "Dataset Mode",
+        "mode_detected_caption": "Auto-detected mode: **{mode}** (survey score {survey_score}, general score {general_score})",
+        "mode_override_label": "Analysis mode",
+        "mode_signals_label": "Detection signals",
+        "mode_general": "General dataset",
+        "mode_survey": "Survey dataset",
+        "mode_mixed": "Mixed dataset",
+        "section_field_roles": "Field Type Detection",
+        "field_roles_desc": (
+            "Each column is classified into a generic field role (metric, dimension, date, ID, ...). "
+            "You can override any role below if the detection is off."
+        ),
+        "reset_field_roles": "Reset Roles to Detected Values",
+        "manual_role_override": "Manual Field Role Override",
+        "detected_role_label": "Detected Role",
+        "active_role_label": "Active Role",
+        "evidence_label": "Evidence",
+        "section_data_overview": "Data Overview",
+        "metric_duplicates": "Duplicate Rows",
+        "overview_tab_fields": "Fields",
+        "overview_tab_numeric": "Numeric Fields",
+        "overview_tab_categorical": "Categorical Fields",
+        "overview_tab_datetime": "Date Fields",
+        "overview_tab_relations": "Relationships",
+        "overview_tab_quality": "Data Quality",
+        "overview_findings_title": "Main findings",
+        "no_numeric_fields": "No numeric fields were detected.",
+        "no_categorical_fields": "No categorical fields were detected.",
+        "no_datetime_fields": "No date or time fields were detected.",
+        "no_relations": "No strong correlations or group differences were detected in the current data.",
+        "correlations_title": "Correlations between numeric fields",
+        "group_differences_title": "Notable group differences",
+        "choose_categorical_field": "Choose a categorical field",
+        "label_field": "Field",
+        "section_suggestions": "Suggested Analyses",
+        "suggestions_desc": "Based on the detected fields, these analyses look most promising:",
+        "section_recommended_charts": "Recommended Charts",
+        "no_recommended_charts": "No charts could be recommended for the current data.",
+        "section_ai_insights": "AI Interpretation",
+        "ai_persona_caption": "Persona in use: {persona}",
+        "ai_persona_general": "general data analyst",
+        "ai_persona_survey": "survey analyst",
+        "ai_persona_mixed": "mixed-data analyst",
+        "ai_not_configured": (
+            "AI service is not configured (set LLM_API_KEY / LLM_BASE_URL / LLM_MODEL in .env). "
+            "All rule-based analysis above remains fully available."
+        ),
+        "ai_generate_button": "Generate AI interpretation",
+        "ai_generating": "Calling the AI service...",
+        "ai_failed_notice": (
+            "The AI service call failed. The rule-based analysis and report remain fully available."
+        ),
+        "ai_grounding_note": "AI conclusions are grounded in the locally computed statistics shown above.",
+        "no_data_insufficient": "The current data is not sufficient to draw further conclusions.",
+        "report_title_general": "Data Analysis Report",
+        "report_title_mixed": "Mixed Dataset Analysis Report",
+        "report_fields_distribution": "Fields and Distributions",
+        "report_variable_relations": "Variable Relationships",
+        "report_next_steps": "Suggested Next Analyses",
+        "report_analysis_limitations": "Analysis Limitations",
+        "plot_correlation_heatmap": "Correlation heatmap of numeric fields",
+        "plot_time_trend": "Monthly record trend for {column}",
+        "label_period": "Month",
+        "label_record_count": "Records",
         "metric_rows": "Rows",
         "metric_columns": "Columns",
         "metric_missing_ratio": "Missing Value Ratio",
         "first_five_rows": "First 5 rows",
         "column_names": "Column Names",
         "column_metadata": "Column Metadata",
-        "section_question_detection": "3. Automatic Question Type Detection",
+        "section_question_detection": "Question Type Detection (Survey Mode)",
         "question_detection_desc": (
             "SurveyMind detects question types automatically, but you can manually override any column "
             "below if the dataset uses unusual formatting."
@@ -50,7 +124,7 @@ TRANSLATIONS = {
         "column_name_label": "Column Name",
         "detected_type_label": "Detected Type",
         "active_type_label": "Active Type",
-        "section_descriptive_stats": "4. Descriptive Statistics",
+        "section_descriptive_stats": "Descriptive Statistics",
         "tab_numeric": "Numeric Questions",
         "tab_scale": "Scale Questions",
         "tab_categorical": "Categorical Questions",
@@ -62,7 +136,7 @@ TRANSLATIONS = {
         "choose_scale_question": "Choose a scale question",
         "scale_distribution": "Score distribution",
         "choose_categorical_question": "Choose a categorical question",
-        "section_visualization": "5. Visualization Explorer",
+        "section_visualization": "Visualization Explorer",
         "chart_tab_categorical": "Categorical Bar Chart",
         "chart_tab_scale": "Scale Bar Chart",
         "chart_tab_numeric": "Numeric Histogram",
@@ -79,7 +153,7 @@ TRANSLATIONS = {
         "no_scale_chart": "No scale questions are available for scale charts.",
         "no_numeric_chart": "No numeric variables are available for histograms.",
         "boxplot_requirement": "Box plots need at least one numeric or scale variable and one categorical variable.",
-        "section_cross_analysis": "6. Cross-Analysis Explorer",
+        "section_cross_analysis": "Cross-Analysis Explorer",
         "target_variable": "Target variable",
         "cross_analysis_requirement": (
             "At least one grouping variable and one additional analyzable target are required for cross-analysis."
@@ -94,7 +168,7 @@ TRANSLATIONS = {
         "chart_type_stacked": "stacked",
         "chart_type_heatmap": "heatmap",
         "cross_open_ended_warning": "Open-ended text fields are not supported for cross-analysis in this MVP.",
-        "section_report": "7. Auto-Generated Report",
+        "section_report": "Auto-Generated Report",
         "download_report": "Download Report (.md)",
         "download_report_filename": "surveymind_report_en.md",
         "question_type_summary_title": "Question Type Summary",
@@ -133,29 +207,91 @@ TRANSLATIONS = {
     },
     "zh-CN": {
         "language_name": "中文",
-        "page_title": "SurveyMind 问卷分析助手",
+        "page_title": "SurveyMind 数据分析助手",
         "app_title": "SurveyMind",
-        "app_subtitle": "双语 AI 问卷分析助手",
+        "app_subtitle": "支持问卷与通用表格的 AI 数据分析助手",
         "app_intro": (
-            "SurveyMind 可以帮助你快速分析问卷数据，包括自动识别题型、汇总回答分布、生成可视化图表、"
-            "进行分组比较，并输出结构化的分析报告。"
+            "SurveyMind 既能分析问卷数据，也能分析普通表格数据。上传 CSV 或 Excel 文件后，"
+            "系统会自动识别数据模式、分析每个字段的类型，生成包含数据质量检查和变量关系的概览，"
+            "推荐图表与分析方向，并输出结构化的分析报告。"
         ),
         "sidebar_settings": "设置",
         "sidebar_language": "界面语言",
         "sidebar_language_help": "选择界面与自动报告使用的语言。",
-        "section_data_upload": "1. 数据上传",
-        "upload_label": "上传 CSV 或 Excel 问卷数据集",
-        "upload_help": "支持 .csv、.xlsx 和 .xls 文件。",
+        "section_data_upload": "数据上传",
+        "upload_label": "上传 CSV 或 Excel 数据集",
+        "upload_help": "支持 .csv、.xlsx 和 .xls 文件——问卷导出或任意表格数据均可。",
         "using_demo_caption": "当前使用内置示例数据集：`{filename}`。",
         "using_upload_caption": "当前使用上传文件：`{filename}`",
-        "section_data_overview": "2. 数据概览",
+        "section_mode_detection": "数据模式识别",
+        "mode_detected_caption": "系统自动识别为：**{mode}**（问卷特征得分 {survey_score}，通用表格得分 {general_score}）",
+        "mode_override_label": "分析模式",
+        "mode_signals_label": "识别依据",
+        "mode_general": "普通数据集",
+        "mode_survey": "问卷数据",
+        "mode_mixed": "混合数据集",
+        "section_field_roles": "字段类型识别",
+        "field_roles_desc": (
+            "系统会将每个字段识别为通用字段角色（数值指标、分类维度、日期、ID 等）。"
+            "如果识别有偏差，可以在下方手动修改。"
+        ),
+        "reset_field_roles": "重置为自动识别结果",
+        "manual_role_override": "手动修改字段角色",
+        "detected_role_label": "自动识别角色",
+        "active_role_label": "当前使用角色",
+        "evidence_label": "识别依据",
+        "section_data_overview": "数据概览",
+        "metric_duplicates": "重复行数",
+        "overview_tab_fields": "字段总览",
+        "overview_tab_numeric": "数值字段",
+        "overview_tab_categorical": "分类字段",
+        "overview_tab_datetime": "日期字段",
+        "overview_tab_relations": "变量关系",
+        "overview_tab_quality": "数据质量",
+        "overview_findings_title": "主要发现",
+        "no_numeric_fields": "未识别到数值字段。",
+        "no_categorical_fields": "未识别到分类字段。",
+        "no_datetime_fields": "未识别到日期或时间字段。",
+        "no_relations": "当前数据中未检测到明显的相关关系或分组差异。",
+        "correlations_title": "数值字段相关性",
+        "group_differences_title": "值得关注的分组差异",
+        "choose_categorical_field": "选择一个分类字段",
+        "label_field": "字段",
+        "section_suggestions": "智能分析建议",
+        "suggestions_desc": "根据识别出的字段，下面这些分析方向最值得优先尝试：",
+        "section_recommended_charts": "推荐图表",
+        "no_recommended_charts": "当前数据暂无可推荐的图表。",
+        "section_ai_insights": "AI 智能解读",
+        "ai_persona_caption": "当前使用的分析角色：{persona}",
+        "ai_persona_general": "通用数据分析师",
+        "ai_persona_survey": "问卷分析师",
+        "ai_persona_mixed": "混合数据分析师",
+        "ai_not_configured": (
+            "尚未配置 AI 服务（请在 .env 中设置 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL）。"
+            "上方所有基于规则的分析结果不受影响，仍然完整可用。"
+        ),
+        "ai_generate_button": "生成 AI 解读",
+        "ai_generating": "正在调用 AI 服务……",
+        "ai_failed_notice": "AI 服务调用失败。基础数据分析与报告不受影响，仍然完整可用。",
+        "ai_grounding_note": "AI 结论完全基于上方由本地计算得出的统计结果。",
+        "no_data_insufficient": "根据当前数据无法进一步判断。",
+        "report_title_general": "数据分析报告",
+        "report_title_mixed": "混合数据集分析报告",
+        "report_fields_distribution": "字段与分布",
+        "report_variable_relations": "变量关系",
+        "report_next_steps": "后续分析建议",
+        "report_analysis_limitations": "分析限制",
+        "plot_correlation_heatmap": "数值字段相关性热力图",
+        "plot_time_trend": "{column} 的按月记录趋势",
+        "label_period": "月份",
+        "label_record_count": "记录数",
         "metric_rows": "行数",
         "metric_columns": "列数",
         "metric_missing_ratio": "缺失值比例",
         "first_five_rows": "前 5 行数据",
         "column_names": "列名",
         "column_metadata": "字段信息",
-        "section_question_detection": "3. 自动题型识别",
+        "section_question_detection": "题型识别（问卷模式）",
         "question_detection_desc": (
             "SurveyMind 会先自动识别题型。如果你的原始问卷格式比较特殊，也可以在下方手动修正。"
         ),
@@ -165,7 +301,7 @@ TRANSLATIONS = {
         "column_name_label": "字段名",
         "detected_type_label": "自动识别题型",
         "active_type_label": "当前使用题型",
-        "section_descriptive_stats": "4. 描述性统计",
+        "section_descriptive_stats": "描述性统计",
         "tab_numeric": "数值题",
         "tab_scale": "量表题",
         "tab_categorical": "类别题",
@@ -177,7 +313,7 @@ TRANSLATIONS = {
         "choose_scale_question": "选择一个量表题",
         "scale_distribution": "各分值分布",
         "choose_categorical_question": "选择一个类别题",
-        "section_visualization": "5. 可视化探索",
+        "section_visualization": "可视化探索",
         "chart_tab_categorical": "类别题柱状图",
         "chart_tab_scale": "量表题分值图",
         "chart_tab_numeric": "数值题直方图",
@@ -194,7 +330,7 @@ TRANSLATIONS = {
         "no_scale_chart": "当前没有可用于量表图的量表题。",
         "no_numeric_chart": "当前没有可用于直方图的数值变量。",
         "boxplot_requirement": "箱线图至少需要一个数值或量表变量，以及一个类别分组变量。",
-        "section_cross_analysis": "6. 分组交叉分析",
+        "section_cross_analysis": "分组交叉分析",
         "target_variable": "目标变量",
         "cross_analysis_requirement": "交叉分析至少需要一个分组变量，以及另一个可分析的目标变量。",
         "grouped_summary_stats": "分组汇总统计",
@@ -207,7 +343,7 @@ TRANSLATIONS = {
         "chart_type_stacked": "堆叠柱状图",
         "chart_type_heatmap": "热力图",
         "cross_open_ended_warning": "当前 MVP 版本暂不支持将开放题文本直接用于交叉分析。",
-        "section_report": "7. 自动生成报告",
+        "section_report": "自动生成报告",
         "download_report": "下载报告（.md）",
         "download_report_filename": "surveymind_分析报告.md",
         "question_type_summary_title": "题型识别概况",
@@ -256,6 +392,25 @@ QUESTION_TYPE_TRANSLATIONS = {
 }
 
 
+FIELD_ROLE_TRANSLATIONS = {
+    FIELD_ROLE_NUMERIC: {"en": "numeric metric", "zh-CN": "数值指标"},
+    FIELD_ROLE_CATEGORICAL: {"en": "categorical dimension", "zh-CN": "分类维度"},
+    FIELD_ROLE_DATETIME: {"en": "date or time", "zh-CN": "日期或时间"},
+    FIELD_ROLE_IDENTIFIER: {"en": "identifier / ID", "zh-CN": "标识符或 ID"},
+    FIELD_ROLE_BOOLEAN: {"en": "boolean variable", "zh-CN": "布尔变量"},
+    FIELD_ROLE_FREE_TEXT: {"en": "free text", "zh-CN": "自由文本"},
+    FIELD_ROLE_MULTI_VALUE: {"en": "multi-value field", "zh-CN": "多值字段"},
+    FIELD_ROLE_EMPTY: {"en": "empty or unusable", "zh-CN": "空白或不可用字段"},
+}
+
+
+DATASET_MODE_LABEL_KEYS = {
+    "general": "mode_general",
+    "survey": "mode_survey",
+    "mixed": "mode_mixed",
+}
+
+
 def t(language: str, key: str, **kwargs) -> str:
     language_map = TRANSLATIONS.get(language, TRANSLATIONS[DEFAULT_LANGUAGE])
     template = language_map.get(key, TRANSLATIONS[DEFAULT_LANGUAGE].get(key, key))
@@ -268,6 +423,15 @@ def get_language_label(language: str) -> str:
 
 def translate_question_type(language: str, question_type: str) -> str:
     return QUESTION_TYPE_TRANSLATIONS.get(question_type, {}).get(language, question_type)
+
+
+def translate_field_role(language: str, role: str) -> str:
+    return FIELD_ROLE_TRANSLATIONS.get(role, {}).get(language, role)
+
+
+def translate_dataset_mode(language: str, mode: str) -> str:
+    key = DATASET_MODE_LABEL_KEYS.get(mode)
+    return t(language, key) if key else mode
 
 
 def translate_scale_level(language: str, level: str) -> str:

@@ -2,7 +2,19 @@
 
 [简体中文说明](README.zh-CN.md)
 
-SurveyMind is a bilingual Streamlit-based MVP for questionnaire analytics. It helps users upload survey datasets, detect question types automatically, generate descriptive statistics, visualize results, run cross-tab analysis, and export a structured markdown report in either English or Chinese.
+SurveyMind is a bilingual Streamlit-based AI-assisted data analysis platform. It analyzes both questionnaire exports and general tabular datasets (modeling data, business tables, logs): upload a CSV or Excel file and it detects the dataset mode, profiles every field, generates a data overview with quality checks and variable relationships, recommends charts and analyses, and exports a structured markdown report in either English or Chinese.
+
+## Dataset Modes and Field Roles
+
+Uploaded files are automatically classified into one of three modes (with a manual override):
+
+- **General dataset** — fields are profiled with generic roles: numeric metric, categorical dimension, date/time, identifier/ID, boolean, free text, multi-value field, empty/unusable. Survey terms such as "single-choice question" never appear in this mode.
+- **Survey dataset** — the classic questionnaire pipeline: question type detection (numeric/scale/single/multiple/open), descriptive statistics, cross analysis, and the survey report.
+- **Mixed dataset** — general profiling plus the survey-specific layers for scale/choice/open-text columns.
+
+Every mode gets the generic data overview: shape and dtypes, missing/duplicate checks, likely ID fields, numeric distributions, categorical top values, date ranges and monthly trends, IQR outlier flags, Pearson correlations, ANOVA-backed group differences, plus 3-5 dynamically generated analysis suggestions and auto-recommended charts.
+
+An optional AI interpretation layer (configured via `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` in `.env`) switches between a general data analyst, survey analyst, or mixed-data analyst persona depending on the mode. The LLM only explains statistics that were already computed locally with pandas/NumPy/SciPy; when the AI service is unavailable, all rule-based analysis remains fully functional.
 
 This project is designed as a clean portfolio piece for data analytics internships, graduate school applications, and GitHub presentation. The implementation focuses on readable Python modules, practical survey-analysis logic, and a user-friendly interface.
 
