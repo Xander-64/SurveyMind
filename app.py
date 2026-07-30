@@ -47,6 +47,7 @@ from src.i18n import (
     translate_scale_level,
 )
 from src.llm_client import is_llm_configured
+from src.preprocessing import soft_clean_dataframe
 
 # Load .env so LLM_API_KEY etc. are available (optional convenience dependency).
 try:
@@ -86,20 +87,12 @@ st.set_page_config(page_title=t(st.session_state["language"], "page_title"), pag
 SUPPORTED_UPLOAD_SUFFIXES = {".csv", ".xlsx", ".xls"}
 
 
-# The strict survey preprocessing (which drops ID/timestamp columns) moved to
-# src/preprocessing.py and still powers the FastAPI backend unchanged. The
-# Streamlit platform keeps every column: field-semantics detection assigns
-# identifier/datetime roles instead of dropping the data.
+# The strict survey preprocessing (which drops ID/timestamp columns) lives in
+# src/preprocessing.py and still powers the five legacy API screens unchanged.
+# The platform keeps every column via the shared lenient cleaner: field
+# semantics assigns identifier/datetime roles instead of dropping the data.
 def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    cleaned_df = df.copy()
-    cleaned_df.columns = [str(column).strip() if column is not None else "" for column in cleaned_df.columns]
-    cleaned_df = cleaned_df.replace(r"^\s*$", pd.NA, regex=True)
-
-    cleaned_df = cleaned_df.dropna(axis=1, how="all")
-    if cleaned_df.shape[1] == 0:
-        raise ValueError("No usable data columns remain after preprocessing.")
-
-    return cleaned_df
+    return soft_clean_dataframe(df)
 
 
 @st.cache_data
