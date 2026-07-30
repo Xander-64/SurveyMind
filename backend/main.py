@@ -64,7 +64,7 @@ from src.question_type_detector import (
     QUESTION_TYPE_SINGLE,
     detect_question_types,
 )
-from src.report_generator import (
+from src.report import (
     build_dataset_summary,
     build_llm_prompt,
     generate_markdown_report,

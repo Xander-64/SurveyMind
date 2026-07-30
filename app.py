@@ -66,7 +66,7 @@ from src.question_type_detector import (
     get_question_type_options,
     question_types_to_frame,
 )
-from src.report_generator import generate_report
+from src.report import generate_report
 from src.visualization import (
     build_categorical_bar_chart,
     build_correlation_heatmap,
