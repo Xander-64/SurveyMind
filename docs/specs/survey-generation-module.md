@@ -994,10 +994,8 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 2. **§7.1 语义规则的实际误报率未知**，批 3 的基准跑出来后再决定是否有规则可升 `error`。
 3. **L2 动态权重的具体数值**（0.55/0.35/0.10 等）是初值，需用 §11 的
    `platform_rename` 合成集实测调优。
-4. **Bonferroni 样本量取 86/99/109（精确）而非 84/97/107（闭式）** —— 评审原话
-   指定采用 84/97/107，但那三个值的实际功效仅 0.792–0.793，低于声明的 0.80，
-   与评审自己确立的「`min_n` 不能给达不到声明功效的数字」原则冲突。
-   本文档按该原则统一取精确值，**此处待最终确认**（§8.2c）。
+4. ~~Bonferroni 样本量~~ —— **已确认**：取精确值 **86/99/109**，闭式 84/97/107
+   降为 caveat 对照并标注实际功效 0.7934/0.7917/0.7928（§8.0、§8.2c）。
 
 ### 15.3 明确不做
 
@@ -1041,3 +1039,146 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 
 > 这套流程把「重构有没有改变行为」从主观判断变成可执行的断言。
 > 后续拆 `i18n.py`、拆 `app.py` 等，一律照此执行并在提交信息里写明 `N/N` 比对结果。
+
+---
+
+## 17. 外部效度检验（批 1 后置验收）
+
+### 17.1 为什么必须做
+
+`golden_survey.json` 是**规则作者自己构造**的，0 error 0 warning 属于自我循环，
+**不构成对精确率的任何证据**。批 2 的 `templates.py` 必须通过校验器——**校验器歪了，
+模板就会被扭曲**——所以必须先用一份与本规则无关的专业问卷检验。
+
+### 17.2 检验材料
+
+**CFPS 2018 汇总问卷**（中国家庭追踪调查，北京大学中国社会科学调查中心）
+公开 PDF，233 页。手工转写 **51 题**至 `tests/fixtures/surveys/external_real.json`。
+
+转写规则（统一执行，见 fixture 内 provenance）：
+
+1. 剥离 `【CAPI】` 加载指令与 `访员注意` / `F1` 访员说明，只保留**受访者听到的题干**；
+2. 其余逐字保留；
+3. **仅 zh-CN**。CFPS 是单语工具，我若自写英文，等于把自己的文案送进措辞规则，
+   会污染这次检验；
+4. 构念只在**原问卷自身用共同引导语成组**处声明（G4/N1002/M7/V1）；
+5. 0-10 量表如实记为 `points=11`。
+
+> ⚠️ **版权**：CFPS 问卷版权属原调查机构。本 fixture 是**节选**，用于方法学校验器
+> 的测试，已标注来源与 URL。若仓库转为公开发布，请自行确认这一使用方式是否需要
+> 额外授权。
+
+### 17.3 结果：51 题触发 104 条（9 error / 95 warning）
+
+| rule_id | 严重度 | 次数 | 判定 |
+| --- | --- | --- | --- |
+| `likert_points_invalid` | error | 8 | ❌ **误报** |
+| `attention_check_present` | error | 1 | ❌ **误报** |
+| `bilingual_completeness` | warning | 59 | ⚪ 产品要求的产物，非方法学问题 |
+| `likert_points_forced_choice` | warning | 19 | ✅ 真实且正确 |
+| `likert_intensity_mirror` | warning | 6 | ❌ **误报** |
+| `absolute_wording` | warning | 5 | ❌ **误报** |
+| `reverse_coded_per_construct` | warning | 3 | ✅ 真实 |
+| `likert_endpoint_polarity` | warning | 1 | ❌ **误报** |
+| `matrix_rows_limit` | warning | 1 | ✅ 真实 |
+| `option_count_too_many` | warning | 1 | ❌ **误报** |
+
+**零触发的规则**（51 题真实文本上无一误报）：`double_barreled`、`leading_question`、
+`double_negative`、`jargon`、`question_length`、`fabricated_citation`、
+`code_*`、`option_label_uniqueness`、`construct_min_items`、
+`construct_items_are_scale`、`question_order_screening`。
+
+**这是精确率最强的一项证据**：最令人担心的三条语义规则（双筒/引导性/术语）
+在 51 道专业题目上误报为 0。§7.0 把它们定为 warning 是保守的，但目前没有数据
+支持升为 error——批 3 的基准跑完再定。
+
+### 17.4 逐条分析与调整建议
+
+#### ❌ A. `likert_points_invalid` × 8 —— 最严重，规则错了
+
+0-10 量表（CFPS 信任组 6 题、自评 2 题）被判 **error**。0-10 是**全世界最常用的
+量表之一**（NPS、生活满意度阶梯、WHO 系列），对它报错不可辩护。
+
+**更深的问题（实测确认）**：检测器 `_is_scale_question` 要求 `1 <= min`，
+所以**任何以 0 开头的量表都识别不出来**：
+
+| 声明点数 | 不带 schema 时 `detect_question_type` |
+| --- | --- |
+| 2 点（1-2） | ❌ numeric（unique 数 < 3） |
+| 3 / 4 / 5 / 6 / 7 / 10 点（**1 起**） | ✅ scale |
+| **0 起任意**（0-10 NPS、0-6…） | ❌ **numeric** |
+
+**这同时推翻了 §7.2 规则 8 的一处文案**：原文称「4/6 点不带 schema 会被识别为
+numeric question」——**错的，4/6 点能被正确识别**。真正的缺口是 0 起量表与 2 点量表。
+`likert_points_forced_choice` 的 suggestion 目前在告诉用户一件不存在的事，必须改。
+
+**建议**：
+
+1. `ScaleSpec` 增加 `min_value: int = 1`，把「点数」与「取值范围」分开表示
+   （0-10 是 `points=11, min_value=0`）；
+2. 点数分档重定：`{5,7,10}` 通过；`{3,4,6}` warning（**去掉那句不成立的代价**）；
+   `points=2` warning（**真的**检测不出）；**0 起量表 warning 而非 error**
+   （标准工具，但不带 schema 会被读成 numeric）；`points<2 或 >11` 才 error；
+3. 独立提一条：**`_is_scale_question` 支持 0 起量表**——这是既有代码的真实缺陷，
+   影响面超出本模块（NPS 数据上传后全部落到 numeric）。
+
+#### ❌ B. `attention_check_present` × 1 —— 类别错误
+
+CFPS 是 **CAPI 面访**，访员在场。注意力检测题是**自填式网络问卷**的约定，
+对访员施测工具强制要求它是把一种施测方式的规范套到另一种上。
+
+**建议**：`Survey` 增加 `administration_mode: "self_administered" | "interviewer"`，
+仅在自填式下要求；或直接降为 warning。倾向前者——它同时给 §5.3 的
+`response_metadata_spec` 提供了语义依托。
+
+#### ❌ C. `likert_intensity_mirror` × 6 —— 词表不全
+
+CFPS 满意度标签「非常不满意 / **不太**满意 / 一般 / **比较**满意 / 非常满意」被判
+强度不对称。`不太` 与 `比较` 在中文里正是一对镜像强度词，但 `INTENSIFIER_TIERS`
+里没有 `不太`。**建议**：补 `不太 / 不很 / 还算 / 有点 / 略微` 等 tier-1 词。
+
+#### ❌ D. `absolute_wording` × 5 —— 特质题的标准措辞
+
+全部命中 `总是`，且全部出自 M7 尽责性量表（「对于事情我**总是**准备充分」）。
+这是 Big Five 类**特质题的标准句式**，`总是` 是量表锚点而非绝对化陷阱。
+
+**建议**：把 `总是 / always` 从词表移出，只保留 `从不 / 所有 / 全部 / 每次 / 绝对`；
+或在 `question_type == scale` 且题干为第一人称陈述时抑制。倾向前者（更简单、可测）。
+
+#### ❌ E. `likert_endpoint_polarity` × 1 —— 词表漏项
+
+P603 标签「很不好 / 很好」。`NEGATIVE_POLARITY_MARKERS` 有 `很差/较差/差`，
+**没有 `不好`**。**建议**：补 `不好 / 不佳 / 不行 / 不高`。
+
+#### ❌ F. `option_count_too_many` × 1 —— 残差码不该计数
+
+Q701A「谁照顾您」11 个选项，其中 3 个是**残差/特殊码**（其他人员、没生过病、
+不需要照顾）。**建议**：`Option` 增加 `residual: bool`，计数时排除；或把上限提到 12。
+
+#### ✅ G. `likert_points_forced_choice` × 19 —— 规则正确
+
+CFPS 的 M7 与 V1 组确实全部采用 4 点（十分不同意/不同意/同意/十分同意，
+另设「既不同意也不反对【不读出】」）。这正是上一轮把该档从 error 改为 warning
+的理由所在——**如果保持 error，一份专业问卷的 19 道题会被挡住导出**。
+（但 suggestion 文案须按 A 修正。）
+
+#### ✅ H. `reverse_coded_per_construct` × 3、`matrix_rows_limit` × 1 —— 真实
+
+三个 6-8 题的电池确实无反向题；M7 的 11 题共用同一格式确实易诱发直线作答。
+值得注意：M7 因含 3 道反向题而**正确地未触发** `reverse_coded_per_construct`
+——规则有区分力。
+
+#### ⚪ I. `bilingual_completeness` × 59 —— 产品要求的产物
+
+单语工具必然全量触发。这不是方法学缺陷，而是**我们的双语前端要求**。
+**建议**：仅当 `Survey` 声明了双语意图时才检查，否则跳过。
+
+### 17.5 结论
+
+- **9 条 error 全部是误报。** 按你的判据——「专业问卷触发大量 error 就是规则错了」
+  ——**A 与 B 两条必须在批 2 之前修**，否则 `templates.py` 会被扭曲：
+  模板会被迫回避 0-10 量表，并被迫给访员施测场景塞注意力检测题。
+- warning 侧误报 4 类（C/D/E/F），均为**词表或计数口径问题，修复成本低**。
+- 语义规则（双筒/引导性/术语）**零误报**，是本轮最有价值的正面结果。
+- 已用 `tests/test_survey_external_validity.py` 固化全部计数；调整规则时须同步
+  更新 `EXPECTED` 并在提交信息里说明理由。

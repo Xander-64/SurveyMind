@@ -1,0 +1,1787 @@
+{
+  "survey_id": "cfps2018excerpt00000000000000000",
+  "title": {
+    "zh-CN": "外部效度检验用结构骨架（题干已移除）"
+  },
+  "primary_language": "zh-CN",
+  "description": {
+    "zh-CN": "由一份真实专业问卷转写而来的结构骨架：保留点数、极性、构念分组、反向计分标记、选项数量与矩阵行数，题干与选项文案一律替换为占位符。来源与完整分析见 docs/external-validity-check.md。"
+  },
+  "created_at": 0.0,
+  "estimated_minutes": 0,
+  "constructs": [
+    {
+      "construct_id": "c_jobsat",
+      "name": {
+        "zh-CN": "工作满意度"
+      },
+      "definition": null,
+      "expected_direction": null
+    },
+    {
+      "construct_id": "c_trust",
+      "name": {
+        "zh-CN": "人际信任"
+      },
+      "definition": null,
+      "expected_direction": null
+    },
+    {
+      "construct_id": "c_consc",
+      "name": {
+        "zh-CN": "尽责性"
+      },
+      "definition": null,
+      "expected_direction": null
+    },
+    {
+      "construct_id": "c_social",
+      "name": {
+        "zh-CN": "社会公平感知"
+      },
+      "definition": null,
+      "expected_direction": null
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "S_G4",
+      "title": {
+        "zh-CN": "[章节：job satisfaction battery]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "G401",
+          "code": "g401",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 1]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G402",
+          "code": "g402",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 2]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G403",
+          "code": "g403",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 3]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G404",
+          "code": "g404",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 4]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G405",
+          "code": "g405",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G406",
+          "code": "g406",
+          "text": {
+            "zh-CN": "[题干已移除 S_G4 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_jobsat",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_N1002",
+      "title": {
+        "zh-CN": "[章节：interpersonal trust battery]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "N10021",
+          "code": "n10021",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 1]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N10022",
+          "code": "n10022",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 2]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N10023",
+          "code": "n10023",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 3]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N10024",
+          "code": "n10024",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 4]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N10025",
+          "code": "n10025",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N10026",
+          "code": "n10026",
+          "text": {
+            "zh-CN": "[题干已移除 S_N1002 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_trust",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_M7",
+      "title": {
+        "zh-CN": "[章节：conscientiousness battery]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "M701",
+          "code": "m701",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 1]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M702",
+          "code": "m702",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 2]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M703",
+          "code": "m703",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 3]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M704",
+          "code": "m704",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 4]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M705",
+          "code": "m705",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M706",
+          "code": "m706",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": true,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M707",
+          "code": "m707",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 7]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": true,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M708",
+          "code": "m708",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 8]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": true,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M709",
+          "code": "m709",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 9]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M711",
+          "code": "m711",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 10]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M712",
+          "code": "m712",
+          "text": {
+            "zh-CN": "[题干已移除 S_M7 11]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_consc",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_V1",
+      "title": {
+        "zh-CN": "[章节：social fairness battery]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "V101",
+          "code": "v101",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 1]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V102",
+          "code": "v102",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 2]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V103",
+          "code": "v103",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 3]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V104",
+          "code": "v104",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 4]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V105",
+          "code": "v105",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V106",
+          "code": "v106",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V107",
+          "code": "v107",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 7]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "V108",
+          "code": "v108",
+          "text": {
+            "zh-CN": "[题干已移除 S_V1 8]"
+          },
+          "question_type": "scale question",
+          "construct_id": "c_social",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 4,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_M8",
+      "title": {
+        "zh-CN": "[章节：marriage and life satisfaction items]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "M801",
+          "code": "m801",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 1]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M802",
+          "code": "m802",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 2]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M803",
+          "code": "m803",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 3]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N12012",
+          "code": "n12012",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 4]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M2011",
+          "code": "m2011",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "unipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M2016",
+          "code": "m2016",
+          "text": {
+            "zh-CN": "[题干已移除 S_M8 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 11,
+            "polarity": "unipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_ATT",
+      "title": {
+        "zh-CN": "[章节：attitude and healthcare items]"
+      },
+      "purpose": "construct",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "M6",
+          "code": "m6",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 1]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "N1001",
+          "code": "n1001",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 2]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M501A",
+          "code": "m501a",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 3]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "3",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项3]"
+              },
+              "order": 2,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "P601",
+          "code": "p601",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 4]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "2",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "3",
+              "label": {
+                "zh-CN": "[选项3]"
+              },
+              "order": 2,
+              "exclusive": false
+            },
+            {
+              "value": "4",
+              "label": {
+                "zh-CN": "[选项4]"
+              },
+              "order": 3,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项5]"
+              },
+              "order": 4,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "P602",
+          "code": "p602",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 5]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "P603",
+          "code": "p603",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 6]"
+          },
+          "question_type": "scale question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": null,
+            "max_label": null,
+            "mid_label": null,
+            "labels": null
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q701A",
+          "code": "q701a",
+          "text": {
+            "zh-CN": "[题干已移除 S_ATT 7]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "2",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "3",
+              "label": {
+                "zh-CN": "[选项3]"
+              },
+              "order": 2,
+              "exclusive": false
+            },
+            {
+              "value": "4",
+              "label": {
+                "zh-CN": "[选项4]"
+              },
+              "order": 3,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项5]"
+              },
+              "order": 4,
+              "exclusive": false
+            },
+            {
+              "value": "6",
+              "label": {
+                "zh-CN": "[选项6]"
+              },
+              "order": 5,
+              "exclusive": false
+            },
+            {
+              "value": "7",
+              "label": {
+                "zh-CN": "[选项7]"
+              },
+              "order": 6,
+              "exclusive": false
+            },
+            {
+              "value": "8",
+              "label": {
+                "zh-CN": "[选项8]"
+              },
+              "order": 7,
+              "exclusive": false
+            },
+            {
+              "value": "77",
+              "label": {
+                "zh-CN": "[选项9]"
+              },
+              "order": 8,
+              "exclusive": false
+            },
+            {
+              "value": "9",
+              "label": {
+                "zh-CN": "[选项10]"
+              },
+              "order": 9,
+              "exclusive": false
+            },
+            {
+              "value": "10",
+              "label": {
+                "zh-CN": "[选项11]"
+              },
+              "order": 10,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    },
+    {
+      "section_id": "S_FACT",
+      "title": {
+        "zh-CN": "[章节：factual and demographic items]"
+      },
+      "purpose": "demographic",
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "G5",
+          "code": "g5",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 1]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G501",
+          "code": "g501",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 2]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "K9",
+          "code": "k9",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 3]"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "zh-CN": "[选项1]"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "5",
+              "label": {
+                "zh-CN": "[选项2]"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "G6",
+          "code": "g6",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 4]"
+          },
+          "question_type": "numeric question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": {
+            "min": 0.1,
+            "max": 168.0,
+            "unit": {
+              "zh-CN": "小时/周"
+            },
+            "integer_only": false
+          },
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "GC1011",
+          "code": "gc1011",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 5]"
+          },
+          "question_type": "numeric question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": {
+            "min": 0,
+            "max": 1000000,
+            "unit": {
+              "zh-CN": "元/月"
+            },
+            "integer_only": false
+          },
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "M9",
+          "code": "m9",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 6]"
+          },
+          "question_type": "numeric question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": {
+            "min": 0,
+            "max": 2000000,
+            "unit": {
+              "zh-CN": "元"
+            },
+            "integer_only": false
+          },
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "EB605",
+          "code": "eb605",
+          "text": {
+            "zh-CN": "[题干已移除 S_FACT 7]"
+          },
+          "question_type": "open-ended text question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": false,
+          "source": "generated",
+          "options": [],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": {
+            "max_length": 50,
+            "placeholder": null
+          },
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ],
+      "intro": null
+    }
+  ],
+  "response_metadata_spec": {
+    "schema_version": 1,
+    "enabled": false,
+    "column_prefix": "_meta_",
+    "fields": {
+      "duration_total_seconds": {
+        "column": "_meta_duration_total",
+        "dtype": "numeric"
+      },
+      "per_question_dwell": {
+        "column_pattern": "_meta_dwell_{question_id}",
+        "dtype": "numeric"
+      },
+      "dropout_position": {
+        "column": "_meta_dropout_at",
+        "dtype": "question_id"
+      },
+      "option_order_seed": {
+        "column": "_meta_option_seed",
+        "dtype": "string"
+      },
+      "per_question_option_order": {
+        "column_pattern": "_meta_order_{question_id}",
+        "dtype": "string(csv of option values)"
+      }
+    },
+    "source_mappings": {},
+    "collected_by": null
+  },
+  "generation_provenance": {
+    "derived_from": "a real professional instrument, transcribed then stripped of its prose",
+    "source_documented_in": "docs/external-validity-check.md",
+    "structure_preserved": [
+      "scale points",
+      "scale polarity",
+      "construct grouping",
+      "reverse-coded flags",
+      "option counts",
+      "matrix block sizes",
+      "question types",
+      "section purposes",
+      "monolingual declaration"
+    ],
+    "prose_removed": [
+      "question stems",
+      "option labels",
+      "scale anchor labels",
+      "section titles"
+    ],
+    "reason": "third-party questionnaire copyright; see docs/external-validity-check.md",
+    "fallback_used": false,
+    "note_on_construct_names": "Construct names and ids are our own modelling labels for the instrument's visible groupings; the source ships no construct table. They are not third-party prose."
+  },
+  "schema_version": 1
+}

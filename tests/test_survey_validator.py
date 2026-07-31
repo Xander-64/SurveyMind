@@ -161,19 +161,32 @@ def test_wording_positives_trigger_their_rule(rule_id, case):
     assert rule_id in rule_ids(validate_survey(survey)), case["why"]
 
 
-@pytest.mark.parametrize("case", load("hard_negatives.json")["cases"], ids=lambda c: c["id"])
-def test_hard_negatives_do_not_trigger_double_barreled(case):
-    """Coordinator present, but not double-barreled.
+HARD_NEGATIVES = load("hard_negatives.json")["cases"]
 
-    Without these, an implementation that flags every coordinator would pass
-    the positive cases and be useless in practice.
+
+@pytest.mark.parametrize(
+    "rule_id,case",
+    [(rule_id, case) for rule_id, cases in HARD_NEGATIVES.items() for case in cases],
+    ids=[case["id"] for cases in HARD_NEGATIVES.values() for case in cases],
+)
+def test_hard_negatives_do_not_trigger_their_rule(rule_id, case):
+    """Near misses that a naive implementation would flag.
+
+    Without these, a rule that fired on every coordinator, every 不, or every
+    capitalised word would pass all the positives and be useless in practice.
     """
     survey = make_survey(questions=[question(zh=case["stem"]["zh-CN"], en=case["stem"]["en"])])
-    assert check_double_barreled(survey) == [], "%s (%s guard): %s" % (
-        case["id"],
-        case["guard"],
-        case["why"],
-    )
+    fired = rule_ids(validate_survey(survey))
+    assert rule_id not in fired, "%s (%s guard): %s" % (case["id"], case["guard"], case["why"])
+
+
+def test_every_wording_rule_has_at_least_five_positives_and_five_negatives():
+    """Design requirement, asserted rather than trusted."""
+    for rule_id in EDGE_CASES:
+        assert len(EDGE_CASES[rule_id]) >= 5, "%s: %d positives" % (rule_id, len(EDGE_CASES[rule_id]))
+        assert rule_id in HARD_NEGATIVES, "%s has no negatives" % rule_id
+        assert len(HARD_NEGATIVES[rule_id]) >= 5, "%s: %d negatives" % (
+            rule_id, len(HARD_NEGATIVES[rule_id]))
 
 
 def test_all_wording_rules_are_warnings_for_now():

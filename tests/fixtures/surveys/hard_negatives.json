@@ -1,105 +1,150 @@
 {
   "_doc": [
-    "Stems that contain a coordinator but are NOT double-barreled.",
-    "The double_barreled rule must fire on none of these.",
+    "Near-miss stems that must NOT trigger their rule. >=5 per wording rule.",
     "",
-    "A test set of obvious positives alone proves nothing: any implementation",
-    "that flags every coordinator would pass it, then produce a useless false",
-    "positive rate on real questionnaires. These hard negatives are the only",
-    "thing keeping the rule honest.",
+    "A test set of obvious positives alone proves nothing: an implementation",
+    "that flagged every coordinator, every 不, or every capitalised word would",
+    "pass the positives and then produce a useless false-positive rate on real",
+    "questionnaires. These negatives are the only thing keeping the rules",
+    "honest, and they are the cases a naive implementation gets wrong.",
     "",
-    "Both language versions are checked, so both must be non-triggering."
+    "Both language versions are checked, so both must be non-triggering.",
+    "external_real.json supplies 51 further real-world negatives."
   ],
-  "cases": [
-    {
-      "id": "hn_companion_family",
-      "guard": "person",
-      "why": "「您和家人」describes who the respondent was with, not two things being judged. Splitting changes the question: the item is about eating together.",
-      "stem": {
-        "zh-CN": "您和家人一起用餐的频率是？",
-        "en": "How often do you eat out with your family?"
-      }
-    },
-    {
-      "id": "hn_companion_friends",
-      "guard": "person",
-      "why": "The coordinator joins the respondent to a companion; neither is an evaluation object.",
-      "stem": {
-        "zh-CN": "您与朋友讨论过本产品吗？",
-        "en": "Have you discussed this product with friends?"
-      }
-    },
-    {
-      "id": "hn_companion_colleagues",
-      "guard": "person",
-      "why": "「您和您的同事」is the subject of a single shared action, not two evaluated targets.",
-      "stem": {
-        "zh-CN": "您和您的同事是否共用同一个账号？",
-        "en": "Do you and your colleagues share one account?"
-      }
-    },
-    {
-      "id": "hn_compound_ratio",
-      "guard": "compound_concept",
-      "why": "「质量和价格的比值」is one concept. Split it and one half stops meaning anything.",
-      "stem": {
-        "zh-CN": "您如何评价质量和价格的比值？",
-        "en": "How would you rate the ratio between price and quality?"
-      }
-    },
-    {
-      "id": "hn_compound_relationship",
-      "guard": "compound_concept",
-      "why": "The item asks about the relationship between the two, which is a single object of judgement.",
-      "stem": {
-        "zh-CN": "您认为价格与质量之间的关系是否合理？",
-        "en": "Is the relationship between price and quality reasonable?"
-      }
-    },
-    {
-      "id": "hn_compound_value_for_money",
-      "guard": "compound_concept",
-      "why": "Value for money is a single established construct.",
-      "stem": {
-        "zh-CN": "请评价本产品的性价比。",
-        "en": "How would you rate the value for money?"
-      }
-    },
-    {
-      "id": "hn_joint_channels",
-      "guard": "joint_quantifier",
-      "why": "「都」makes it one conjoined claim: have you used BOTH. Splitting changes the proposition.",
-      "stem": {
-        "zh-CN": "线上和线下渠道您都使用过吗？",
-        "en": "Have you used both online and offline channels?"
-      }
-    },
-    {
-      "id": "hn_joint_scenarios",
-      "guard": "joint_quantifier",
-      "why": "Work and study are the setting, and 「都」asks whether both settings apply at once.",
-      "stem": {
-        "zh-CN": "您在工作和学习场景中都会使用它吗？",
-        "en": "Do you use it both at work and while studying?"
-      }
-    },
-    {
-      "id": "hn_joint_consider",
-      "guard": "joint_quantifier",
-      "why": "「同时」/ both asks about the joint consideration itself, which is one behaviour.",
-      "stem": {
-        "zh-CN": "您购买时会同时考虑价格和质量吗？",
-        "en": "Do you consider both price and quality when buying?"
-      }
-    },
-    {
-      "id": "hn_single_object",
-      "guard": "control",
-      "why": "Control case: one evaluation object, no coordinator at all. Must never fire.",
-      "stem": {
-        "zh-CN": "您平时更关注配送速度吗？",
-        "en": "Do you usually care more about delivery speed?"
-      }
-    }
-  ]
+  "cases": {
+    "double_barreled": [
+      {"id": "hn_db_companion_family", "guard": "person",
+       "why": "「您和家人」is who the respondent was with, not two judged targets. Splitting changes the question: it is about eating together.",
+       "stem": {"zh-CN": "您和家人一起用餐的频率是？", "en": "How often do you eat out with your family?"}},
+      {"id": "hn_db_companion_friends", "guard": "person",
+       "why": "The coordinator joins the respondent to a companion; neither side is an evaluation object.",
+       "stem": {"zh-CN": "您与朋友讨论过本产品吗？", "en": "Have you discussed this product with friends?"}},
+      {"id": "hn_db_companion_colleagues", "guard": "person",
+       "why": "Subject of a single shared action, not two evaluated targets.",
+       "stem": {"zh-CN": "您和您的同事是否共用同一个账号？", "en": "Do you and your colleagues share one account?"}},
+      {"id": "hn_db_compound_ratio", "guard": "compound_concept",
+       "why": "「质量和价格的比值」is one concept. Split it and one half stops meaning anything.",
+       "stem": {"zh-CN": "您如何评价质量和价格的比值？", "en": "How would you rate the ratio between price and quality?"}},
+      {"id": "hn_db_compound_relationship", "guard": "compound_concept",
+       "why": "The relationship between the two is itself the single object of judgement.",
+       "stem": {"zh-CN": "您认为价格与质量之间的关系是否合理？", "en": "Is the relationship between price and quality reasonable?"}},
+      {"id": "hn_db_compound_value", "guard": "compound_concept",
+       "why": "Value for money is one established construct.",
+       "stem": {"zh-CN": "请评价本产品的性价比。", "en": "How would you rate the value for money?"}},
+      {"id": "hn_db_joint_channels", "guard": "joint_quantifier",
+       "why": "「都」makes it one conjoined claim: have you used BOTH. Splitting changes the proposition.",
+       "stem": {"zh-CN": "线上和线下渠道您都使用过吗？", "en": "Have you used both online and offline channels?"}},
+      {"id": "hn_db_joint_scenarios", "guard": "joint_quantifier",
+       "why": "Work and study are the setting, and 「都」asks whether both settings apply at once.",
+       "stem": {"zh-CN": "您在工作和学习场景中都会使用它吗？", "en": "Do you use it both at work and while studying?"}},
+      {"id": "hn_db_joint_consider", "guard": "joint_quantifier",
+       "why": "「同时」/ both asks about the joint consideration, which is one behaviour.",
+       "stem": {"zh-CN": "您购买时会同时考虑价格和质量吗？", "en": "Do you consider both price and quality when buying?"}},
+      {"id": "hn_db_control_single", "guard": "control",
+       "why": "Control: one evaluation object, no coordinator at all. Must never fire.",
+       "stem": {"zh-CN": "您平时更关注配送速度吗？", "en": "Do you usually care more about delivery speed?"}}
+    ],
+    "leading_question": [
+      {"id": "hn_lq_neutral_rate", "guard": "neutral_wording",
+       "why": "Asks for an evaluation without supplying one.",
+       "stem": {"zh-CN": "您如何评价本次服务？", "en": "How would you rate this service?"}},
+      {"id": "hn_lq_neutral_price", "guard": "neutral_wording",
+       "why": "Asks whether the price is reasonable rather than asserting it is.",
+       "stem": {"zh-CN": "您认为这个价格是否合理？", "en": "Do you think this price is reasonable?"}},
+      {"id": "hn_lq_agreement_frame", "guard": "neutral_wording",
+       "why": "Contains 同意 but presents no position to agree with; a naive marker list catches this.",
+       "stem": {"zh-CN": "您是否同意以下说法？", "en": "Do you agree with the following statement?"}},
+      {"id": "hn_lq_open_invite", "guard": "neutral_wording",
+       "why": "An open invitation carries no valence.",
+       "stem": {"zh-CN": "请评价本产品的整体表现。", "en": "Please rate the overall performance of this product."}},
+      {"id": "hn_lq_negative_topic", "guard": "topic_not_framing",
+       "why": "Asks about problems without asserting that any occurred: a negative topic is not a leading frame.",
+       "stem": {"zh-CN": "您在使用过程中遇到过问题吗？", "en": "Did you run into any problems while using it?"}}
+    ],
+    "double_negative": [
+      {"id": "hn_dn_across_clauses", "guard": "clause_split",
+       "why": "Two negations, but in different clauses, so the reader never has to unwind them together.",
+       "stem": {"zh-CN": "这个功能不错，价格也没有问题。", "en": "The feature is fine, and the price is no problem."}},
+      {"id": "hn_dn_compound_butong", "guard": "single_negation",
+       "why": "不同 is one ordinary compound, not a negation of the verb.",
+       "stem": {"zh-CN": "您对不同方案的偏好是什么？", "en": "Which of the different options do you prefer?"}},
+      {"id": "hn_dn_compound_bujin", "guard": "single_negation",
+       "why": "不仅 is a discourse connective; treating every 不 as a negation would fire here.",
+       "stem": {"zh-CN": "不仅如此，您还会推荐我们吗？", "en": "Beyond that, would you recommend us?"}},
+      {"id": "hn_dn_compound_bucuo", "guard": "single_negation",
+       "why": "不错 means good. A naive negation count reads it as a negation.",
+       "stem": {"zh-CN": "您觉得这个设计不错吗？", "en": "Do you think this design is good?"}},
+      {"id": "hn_dn_plain_negation", "guard": "single_negation",
+       "why": "One negation is plain and readable; only stacking is the problem.",
+       "stem": {"zh-CN": "这个功能对您没有帮助吗？", "en": "Is this feature not useful to you?"}}
+    ],
+    "absolute_wording": [
+      {"id": "hn_aw_usually", "guard": "hedged_frequency",
+       "why": "通常 / usually is a hedge, the opposite of an absolute.",
+       "stem": {"zh-CN": "您通常多久使用一次本产品？", "en": "How often do you usually use this product?"}},
+      {"id": "hn_aw_general", "guard": "hedged_frequency",
+       "why": "一般 is a hedge and also a scale midpoint word.",
+       "stem": {"zh-CN": "您一般如何评价本次服务？", "en": "In general, how do you rate this service?"}},
+      {"id": "hn_aw_most_cases", "guard": "hedged_frequency",
+       "why": "大部分情况下 explicitly avoids the absolute claim.",
+       "stem": {"zh-CN": "大部分情况下您会选择哪种方式？", "en": "In most cases, which option do you choose?"}},
+      {"id": "hn_aw_sometimes", "guard": "hedged_frequency",
+       "why": "有时 / sometimes sits at the other end of the frequency range.",
+       "stem": {"zh-CN": "您有时会遇到配送延迟吗？", "en": "Do you sometimes experience delivery delays?"}},
+      {"id": "hn_aw_plain_count", "guard": "no_quantifier",
+       "why": "A plain count question carries no quantifier at all.",
+       "stem": {"zh-CN": "过去一个月您下过几次订单？", "en": "How many orders did you place last month?"}}
+    ],
+    "jargon": [
+      {"id": "hn_jg_explained_acronym", "guard": "explained",
+       "why": "The acronym is glossed in brackets on first use, which is exactly the remedy the rule asks for.",
+       "stem": {"zh-CN": "本产品的 API（应用程序接口）是否好用？", "en": "Is the interface easy to use?"}},
+      {"id": "hn_jg_plain_process", "guard": "plain_language",
+       "why": "Ordinary words for an ordinary process.",
+       "stem": {"zh-CN": "您如何评价我们的服务流程？", "en": "How do you rate our service process?"}},
+      {"id": "hn_jg_plain_order", "guard": "plain_language",
+       "why": "Describes the action rather than naming a metric for it.",
+       "stem": {"zh-CN": "您觉得下单过程是否顺畅？", "en": "Was placing an order straightforward?"}},
+      {"id": "hn_jg_plain_delivery", "guard": "plain_language",
+       "why": "No metric vocabulary, no acronym.",
+       "stem": {"zh-CN": "您对配送时间满意吗？", "en": "Are you happy with the delivery time?"}},
+      {"id": "hn_jg_lowercase_word", "guard": "not_an_acronym",
+       "why": "An ordinary capitalised word at the start of a sentence must not be read as an acronym.",
+       "stem": {"zh-CN": "您会再次购买本产品吗？", "en": "Would you buy this product again?"}}
+    ],
+    "question_length": [
+      {"id": "hn_ql_zh_just_under", "guard": "under_limit",
+       "why": "39 characters: just inside the Chinese guideline, so an off-by-one would show up here.",
+       "stem": {"zh-CN": "综合考虑您本次购物的整体体验，请问您对我们的服务是否感到满意呢？", "en": "Are you satisfied overall?"}},
+      {"id": "hn_ql_en_just_under", "guard": "under_limit",
+       "why": "24 words: just inside the English guideline.",
+       "stem": {"zh-CN": "满意吗？", "en": "Considering the delivery time and nothing else about your recent order with us, how satisfied would you say you are right now?"}},
+      {"id": "hn_ql_short_zh", "guard": "under_limit",
+       "why": "A short stem, the normal case.",
+       "stem": {"zh-CN": "您对本次配送是否满意？", "en": "Are you happy with this delivery?"}},
+      {"id": "hn_ql_short_en", "guard": "under_limit",
+       "why": "A short English stem.",
+       "stem": {"zh-CN": "您的年龄段是？", "en": "Which age group are you in?"}},
+      {"id": "hn_ql_medium", "guard": "under_limit",
+       "why": "A mid-length stem that a tighter limit would wrongly catch.",
+       "stem": {"zh-CN": "请问您最近三个月内是否使用过本产品的退换货服务？", "en": "Have you used the returns service in the past three months?"}}
+    ],
+    "fabricated_citation": [
+      {"id": "hn_fc_year_in_question", "guard": "year_not_citation",
+       "why": "A year in the stem is a time reference, not a citation.",
+       "stem": {"zh-CN": "2026 年您是否使用过本产品？", "en": "Did you use this product during 2026?"}},
+      {"id": "hn_fc_bracket_instruction", "guard": "bracket_not_citation",
+       "why": "Brackets carrying an answering instruction must not read as a reference.",
+       "stem": {"zh-CN": "请选择您的年龄段（可多选）。", "en": "Choose your age group (multiple answers allowed)."}},
+      {"id": "hn_fc_year_amount", "guard": "year_not_citation",
+       "why": "A year plus a number is still not an author-year pattern.",
+       "stem": {"zh-CN": "您在 2025 年的消费金额大约是多少？", "en": "Roughly how much did you spend in 2025?"}},
+      {"id": "hn_fc_bracket_optional", "guard": "bracket_not_citation",
+       "why": "A bracketed hint with a capitalised word inside but no year.",
+       "stem": {"zh-CN": "请在下方填写您的建议（选填）。", "en": "Write your suggestion below (Optional)."}},
+      {"id": "hn_fc_plain_source_word", "guard": "no_reference",
+       "why": "Asks where the respondent heard about the product; mentions a source without citing literature.",
+       "stem": {"zh-CN": "您是从哪个渠道了解到本产品的？", "en": "Where did you first hear about this product?"}}
+    ]
+  }
 }
