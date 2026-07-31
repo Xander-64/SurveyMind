@@ -180,6 +180,33 @@ def test_hard_negatives_do_not_trigger_their_rule(rule_id, case):
     assert rule_id not in fired, "%s (%s guard): %s" % (case["id"], case["guard"], case["why"])
 
 
+SYNTHETIC = load("synthetic_wording.json")
+
+
+@pytest.mark.parametrize("stem", SYNTHETIC["stems"], ids=lambda s: s["id"])
+def test_synthetic_questionnaire_prose_triggers_no_wording_rule(stem):
+    """CI's coverage for the wording rules.
+
+    external_wording.json holds a real instrument's own text and is git-ignored,
+    so its tests always skip on CI, leaving the three least certain rules with
+    no coverage there. This corpus is written for this project, so it can be
+    committed. Every stem sits deliberately close to a rule boundary — the
+    `near` field names which one.
+
+    A clean result here is partly circular (same author as the rules) and does
+    not replace the external check; it is a regression guard, not evidence.
+    """
+    text = {k: v for k, v in stem.items() if k in ("zh-CN", "en")}
+    survey = make_survey(questions=[Question(
+        question_id="Q1", code="item_01", text=text,
+        question_type=QUESTION_TYPE_SCALE, scale_spec=agree_scale(),
+    )])
+    fired = set(rule_ids(validate_survey(survey)))
+    unexpected = fired & set(SYNTHETIC["expected_silent"])
+    assert not unexpected, "%s fired on a stem near %s: %s" % (
+        sorted(unexpected), stem["near"], text)
+
+
 def test_every_wording_rule_has_at_least_five_positives_and_five_negatives():
     """Design requirement, asserted rather than trusted."""
     for rule_id in EDGE_CASES:
