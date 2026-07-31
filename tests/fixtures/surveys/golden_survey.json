@@ -78,7 +78,8 @@
                 "en": "Yes"
               },
               "order": 0,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "no",
@@ -87,7 +88,8 @@
                 "en": "No"
               },
               "order": 1,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             }
           ],
           "scale_spec": null,
@@ -578,7 +580,8 @@
                 "en": "Official website"
               },
               "order": 0,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "store",
@@ -587,7 +590,8 @@
                 "en": "Physical store"
               },
               "order": 1,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "third",
@@ -596,7 +600,8 @@
                 "en": "Third-party platform"
               },
               "order": 2,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "none",
@@ -605,7 +610,8 @@
                 "en": "None of these"
               },
               "order": 3,
-              "exclusive": true
+              "exclusive": true,
+              "residual": false
             }
           ],
           "scale_spec": null,
@@ -649,7 +655,8 @@
                 "en": "Strongly disagree"
               },
               "order": 0,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a2",
@@ -658,7 +665,8 @@
                 "en": "Disagree"
               },
               "order": 1,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a3",
@@ -667,7 +675,8 @@
                 "en": "Neutral"
               },
               "order": 2,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a4",
@@ -676,7 +685,8 @@
                 "en": "Agree"
               },
               "order": 3,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a5",
@@ -685,7 +695,8 @@
                 "en": "Strongly agree"
               },
               "order": 4,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             }
           ],
           "scale_spec": null,
@@ -769,7 +780,8 @@
                 "en": "Woman"
               },
               "order": 0,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "m",
@@ -778,7 +790,8 @@
                 "en": "Man"
               },
               "order": 1,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "o",
@@ -787,7 +800,8 @@
                 "en": "Other or prefer not to say"
               },
               "order": 2,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             }
           ],
           "scale_spec": null,
@@ -819,7 +833,8 @@
                 "en": "Under 18"
               },
               "order": 0,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a1825",
@@ -828,7 +843,8 @@
                 "en": "18-25"
               },
               "order": 1,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a2635",
@@ -837,7 +853,8 @@
                 "en": "26-35"
               },
               "order": 2,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "a3645",
@@ -846,7 +863,8 @@
                 "en": "36-45"
               },
               "order": 3,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             },
             {
               "value": "o46",
@@ -855,7 +873,8 @@
                 "en": "46 or older"
               },
               "order": 4,
-              "exclusive": false
+              "exclusive": false,
+              "residual": false
             }
           ],
           "scale_spec": null,

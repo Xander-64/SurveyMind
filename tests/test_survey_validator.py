@@ -37,6 +37,7 @@ from src.survey_gen.schema import (
 from src.survey_gen.validator import (
     RULES,
     SEVERITY_ERROR,
+    SEVERITY_INFO,
     SEVERITY_WARNING,
     check_double_barreled,
     errors,
@@ -618,3 +619,100 @@ def test_ambiguous_cases_match_the_recorded_behaviour(case):
         "update current_behavior in ambiguous.json. Contested because: %s"
         % (case["id"], case["why_contested"])
     )
+
+
+# --------------------------------------------------------------------------
+# fixes driven by the external-validity check
+# --------------------------------------------------------------------------
+
+
+def test_standard_chinese_satisfaction_anchors_are_symmetric():
+    """不太 mirrors 比较. Without it in the intensity table, the anchor set a real
+    instrument actually uses was reported as asymmetric."""
+    labels = [
+        localized("非常不满意", "Very dissatisfied"),
+        localized("不太满意", "Somewhat dissatisfied"),
+        localized("一般", "Neutral"),
+        localized("比较满意", "Somewhat satisfied"),
+        localized("非常满意", "Very satisfied"),
+    ]
+    survey = make_survey(questions=[question(scale_spec=agree_scale(labels=labels))])
+    assert "likert_intensity_mirror" not in rule_ids(validate_survey(survey))
+
+
+def test_bu_hao_counts_as_a_negative_pole():
+    """很不好 / 很好 is a legitimate anchor pair; 不好 was missing from the list."""
+    labels = [
+        localized("很不好", "Very poor"),
+        localized("不好", "Poor"),
+        localized("一般", "Neutral"),
+        localized("好", "Good"),
+        localized("很好", "Very good"),
+    ]
+    survey = make_survey(questions=[question(scale_spec=agree_scale(labels=labels))])
+    assert "likert_endpoint_polarity" not in rule_ids(validate_survey(survey))
+
+
+def test_residual_options_do_not_count_towards_the_option_limit():
+    """"Other", "not applicable" and "never happened" are not categories."""
+    def item(residual_flags):
+        return question(
+            qid="Q1", code="c1", question_type=QUESTION_TYPE_SINGLE, scale_spec=None,
+            options=[
+                Option("o%d" % i, localized("选项%d" % i, "Option %d" % i),
+                       order=i, residual=flag)
+                for i, flag in enumerate(residual_flags)
+            ],
+        )
+
+    eleven_with_three_residual = [False] * 8 + [True] * 3
+    assert "option_count_too_many" not in rule_ids(
+        validate_survey(make_survey(questions=[item(eleven_with_three_residual)])))
+
+    eleven_substantive = [False] * 11
+    assert "option_count_too_many" in rule_ids(
+        validate_survey(make_survey(questions=[item(eleven_substantive)])))
+
+
+def test_absolute_wording_keeps_its_teeth_outside_a_battery():
+    """The rule had to survive the scope narrowing, not be gutted by it.
+
+    Dropping 总是 from the word list would have stopped this from being caught,
+    which is the actual defect the rule exists for.
+    """
+    standalone = question(
+        qid="Q1", code="c1", question_type=QUESTION_TYPE_SINGLE, scale_spec=None,
+        zh="您总是对我们的服务满意吗？", en="Are you always satisfied with our service?",
+        options=[Option("y", localized("是", "Yes")), Option("n", localized("否", "No"))],
+    )
+    found = [i for i in validate_survey(make_survey(questions=[standalone]))
+             if i.rule_id == "absolute_wording"]
+    assert found and found[0].severity == SEVERITY_WARNING
+
+
+def test_absolute_wording_drops_to_info_inside_a_declared_battery():
+    """总是 is the standard phrasing of a trait item, so inside a construct's
+    scale battery the finding is informational rather than actionable."""
+    items = [
+        question(qid="Q%d" % i, code="t_%d" % i, construct_id="c",
+                 zh="对于事情我总是准备充分。", en="I am always prepared.")
+        for i in range(3)
+    ]
+    items[0].reverse_coded = True
+    survey = make_survey(questions=items,
+                         constructs=[Construct("c", localized("尽责性", "Conscientiousness"))])
+    found = [i for i in validate_survey(survey) if i.rule_id == "absolute_wording"]
+    assert found and all(i.severity == SEVERITY_INFO for i in found)
+
+
+def test_option_labels_and_scale_anchors_are_never_checked_for_absolutes():
+    """从不 / 总是 is a perfectly good unipolar anchor pair."""
+    labels = [
+        localized("从不", "Never"), localized("很少", "Rarely"),
+        localized("有时", "Sometimes"), localized("经常", "Often"),
+        localized("总是", "Always"),
+    ]
+    survey = make_survey(questions=[question(
+        zh="您多久使用一次本产品？", en="How often do you use this product?",
+        scale_spec=agree_scale(polarity=POLARITY_UNIPOLAR, labels=labels))])
+    assert "absolute_wording" not in rule_ids(validate_survey(survey))

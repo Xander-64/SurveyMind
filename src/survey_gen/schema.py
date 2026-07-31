@@ -145,6 +145,12 @@ class Option:
     order: int = 0
     # "None of the above" / "Prefer not to say": may not be combined with others.
     exclusive: bool = False
+    # A residual or special code ("other", "not applicable", "refused", "never
+    # been ill") rather than a substantive category. Excluded from the option
+    # count, and — see docs/specs/survey-generation-module.md section 4.6 — it
+    # must also be excluded at analysis time: it does not belong in a frequency
+    # denominator or a chi-square contingency table.
+    residual: bool = False
 
 
 @dataclass
@@ -331,6 +337,7 @@ def _option_from_dict(payload: dict[str, Any]) -> Option:
         label=payload.get("label") or {},
         order=int(payload.get("order", 0)),
         exclusive=bool(payload.get("exclusive", False)),
+        residual=bool(payload.get("residual", False)),
     )
 
 

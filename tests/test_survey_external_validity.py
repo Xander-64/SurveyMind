@@ -65,9 +65,6 @@ EXPECTED_STRUCTURE = {
     "likert_points_zero_based": 8,
     # true positive: three batteries carry no reverse-keyed item
     "reverse_coded_per_construct": 3,
-    # still a false positive: residual codes inflate the count. Fix pending
-    # (Option.residual)
-    "option_count_too_many": 1,
     # Gone since the previous run, all deliberately:
     #   likert_points_invalid   8 -> 0  0-10 is a valid design, not a defect
     #   attention_check_present 1 -> 0  interviewer mode does not require one
@@ -77,16 +74,14 @@ EXPECTED_STRUCTURE = {
 
 # ---- wording-dependent findings, only visible with the local fixture ---------
 EXPECTED_WORDING_EXTRA = {
-    # false positive: 不太/比较 is a valid Chinese intensity pair
-    "likert_intensity_mirror": 6,
-    # false positive: 总是 is the standard phrasing of trait items
+    # Down from warning to info, and correctly so: all five are 总是 inside a
+    # trait battery, where it is the standard phrasing rather than an absolutist
+    # trap. The rule keeps its detection power for standalone items.
     "absolute_wording": 5,
-    # false positive: 不好 is missing from the negative-polarity list
-    "likert_endpoint_polarity": 1,
+    # Gone since the previous run:
+    #   likert_intensity_mirror 6 -> 0  不太 added; 不太/比较 is a valid pair
+    #   likert_endpoint_polarity 1 -> 0  不好 added to the negative markers
 }
-
-# Every one of these is a pending fix, tracked in docs/external-validity-check.md.
-# None of them is an error, so none can block an export.
 
 # Rules a professional instrument must not trip. Zero hits across 51 real items
 # is the strongest precision evidence available for the wording rules.
@@ -182,6 +177,7 @@ def test_a_real_instrument_now_raises_no_errors_at_all(structure_counts):
     assert structure_counts["likert_points_invalid"] == 0
     assert structure_counts["attention_check_present"] == 0
     assert structure_counts["bilingual_completeness"] == 0
+    assert structure_counts["option_count_too_many"] == 0
 
 
 # ---- local-only fixture ------------------------------------------------------
@@ -213,3 +209,22 @@ def test_wording_counts_have_not_drifted(wording_issues):
 def test_no_errors_survive_on_the_full_transcription_either(wording_issues):
     assert errors(wording_issues) == []
     assert all(issue.severity != SEVERITY_ERROR for issue in wording_issues)
+
+
+@wording_only
+def test_no_false_positives_remain_at_warning_level(wording_issues):
+    """Every warning left standing is a true finding or a design comment.
+
+    The four vocabulary and scope defects the real instrument exposed are all
+    closed; what is left is the forced-choice comment, the zero-based note, the
+    three batteries genuinely missing a reverse-keyed item, and five trait-item
+    hits demoted to info.
+    """
+    from src.survey_gen.validator import warnings as warning_issues
+
+    remaining = Counter(issue.rule_id for issue in warning_issues(wording_issues))
+    assert dict(remaining) == {
+        "likert_points_forced_choice": 19,
+        "likert_points_zero_based": 8,
+        "reverse_coded_per_construct": 3,
+    }

@@ -25,6 +25,7 @@ from src.survey_gen.schema import (
 )
 from src.survey_gen.validator import (
     SEVERITY_ERROR,
+    SEVERITY_INFO,
     SEVERITY_WARNING,
     ValidationIssue,
     validate_survey,
@@ -38,6 +39,7 @@ __all__ = [
     "ResponseMetadataSpec",
     "SCHEMA_VERSION",
     "SEVERITY_ERROR",
+    "SEVERITY_INFO",
     "SEVERITY_WARNING",
     "ScaleSpec",
     "Section",

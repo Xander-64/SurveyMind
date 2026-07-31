@@ -14,13 +14,14 @@ what it changed.
 Measured while designing the fix (see docs/detection-benchmark.md):
 
     state                        scale recall   count misclassification
-    current                          60%                 20%
-    widen lower bound only           80%                 70%
-    widen lower bound + unique cap  100%                100%
-    ... + count-name heuristic      100%                  0%
+    before, widen lower bound only   80%                 70%
+    before, + unique cap            100%                100%
+    shipped: no widening, name demotion in the safe direction only
+                                     60%                  0%
 
-The third row is the one that matters: fixing both gates without a name
-heuristic destroys the distinction entirely.
+Widening was rejected: it takes count misclassification to 100%. What shipped
+instead closes the dangerous direction (counts read as scales, 20% -> 0%) and
+leaves the safe one open (zero-based scales stay numeric, surfaced as a hint).
 """
 import json
 import random
@@ -76,19 +77,63 @@ def test_zero_based_scales_are_currently_missed():
     assert all(verdict(spec) == QUESTION_TYPE_NUMERIC for spec in zero_based)
 
 
-def test_some_count_variables_are_already_misread_today():
-    """Not a new problem introduced by the fix: any count whose range happens
-    to sit inside 1-5 / 1-7 / 1-10 is read as a scale right now."""
-    already_wrong = [s for s in DATA["counts"] if s["expected"] == QUESTION_TYPE_SCALE]
-    assert [s["name"] for s in already_wrong] == ["家庭人口数", "房间数量"]
+def test_counts_inside_a_likert_window_are_demoted_by_name():
+    """The dangerous direction, closed.
+
+    Any count whose range happens to sit inside 1-5 / 1-7 / 1-10 used to be read
+    as a scale, and a misread count reaches the report and AI layers where it is
+    narrated as a rating. The demotion is monotone-safe: applied in this
+    direction, a wrong call only turns a real scale into a numeric question,
+    which loses information but cannot invent a false rating.
+    """
+    from src.question_type_detector import scale_demotion_reason
+
+    demoted = {s["name"]: scale_demotion_reason(column(s), s["name"])
+               for s in DATA["counts"] if s.get("fixed_by")}
+    assert demoted == {"家庭人口数": "count_name:人口", "房间数量": "count_name:数量"}
+    for spec in DATA["counts"]:
+        assert verdict(spec) == QUESTION_TYPE_NUMERIC
+
+
+def test_a_scoring_keyword_outranks_a_counting_one():
+    """Guards the one way this demotion could hurt: "满意度分数" must survive."""
+    import random
+
+    import pandas as pd
+
+    for name in ("满意度分数", "满意度频次", "agreement_frequency", "评分次数"):
+        random.seed(1)
+        values = pd.Series([random.randint(1, 5) for _ in range(300)], name=name)
+        assert detect_question_type(values, column_name=name) == QUESTION_TYPE_SCALE, name
+
+
+def test_the_known_cost_of_the_frequency_keyword():
+    """Recorded rather than hidden.
+
+    An English Likert frequency item whose name carries no scoring word is
+    demoted. The Chinese 使用频率 is safe (the list holds 频次, not 频率), and any
+    name with a scoring word is protected. The cost is information loss plus one
+    manual override, which is the safe side of the asymmetry.
+    """
+    import random
+
+    import pandas as pd
+
+    random.seed(2)
+    values = pd.Series([random.randint(1, 5) for _ in range(300)], name="frequency_of_use")
+    assert detect_question_type(values, column_name="frequency_of_use") == QUESTION_TYPE_NUMERIC
+
+    random.seed(2)
+    chinese = pd.Series([random.randint(1, 5) for _ in range(300)], name="使用频率")
+    assert detect_question_type(chinese, column_name="使用频率") == QUESTION_TYPE_SCALE
 
 
 def test_current_recall_and_misclassification_rates():
     """The two numbers the fix has to move, asserted so a change is visible."""
     recall = sum(verdict(s) == QUESTION_TYPE_SCALE for s in DATA["scales"])
     misread = sum(verdict(s) == QUESTION_TYPE_SCALE for s in DATA["counts"])
-    assert (recall, misread) == (6, 2), (
-        "Scale recall / count misclassification changed from 6/10 and 2/10. "
+    assert (recall, misread) == (6, 0), (
+        "Scale recall / count misclassification changed from 6/10 and 0/10. "
         "If this is the planned fix, update the expectations here and the "
         "trade-off table in docs/detection-benchmark.md."
     )

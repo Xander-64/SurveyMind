@@ -116,8 +116,8 @@ def _coerce_numeric_like_values(series: pd.Series) -> pd.Series:
     return numeric_values.fillna(extracted_numeric_values)
 
 
-def _is_scale_question(series: pd.Series) -> bool:
-    """Identify Likert-style numeric items such as 1-5, 1-7, or 1-10 scales."""
+def _is_scale_by_values(series: pd.Series) -> bool:
+    """The value rules alone: range, cardinality, integer ratio."""
     numeric_values = _coerce_numeric_like_values(series.dropna()).dropna()
     if numeric_values.empty:
         return False
@@ -150,21 +150,63 @@ def _is_scale_question(series: pd.Series) -> bool:
     return integer_ratio >= 0.8
 
 
-# Column names that lean towards a count rather than a rating. Used only to
-# reduce noise in the scale_candidate hint below — never to decide a type.
+# Column names that read as a count rather than a rating.
+#
+# This list is used in exactly one direction: to demote a column the value
+# rules called a scale back to numeric. That direction is monotone-safe. Getting
+# it wrong turns a real scale into a numeric question, which only loses
+# information — the mean stays a legitimate statistic. The opposite direction,
+# promoting on a name, could turn a count into a scale, and a count read as a
+# scale reaches the report and AI layers, where "3.2 purchases on average"
+# becomes "an average rating of 3.2".
+#
+# The overfitting objection to this word list (see docs/detection-benchmark.md)
+# applies to the promoting direction only. Here the worst case is a safe one.
 COUNT_NAME_KEYWORDS = (
-    "次数", "个数", "数量", "人数", "天数", "频次", "件数", "笔数",
-    "count", "number", "times", "qty", "num_", "_num",
+    "次数", "个数", "数量", "人数", "人口", "天数", "频次", "件数", "笔数",
+    "count", "number", "times", "frequency", "qty", "num_", "_num",
 )
 
+def _column_name_suggests_count(column_name: str | None, include_suffix: bool = False) -> bool:
+    """Explicit keywords only by default.
 
-def _column_name_suggests_count(column_name: str | None) -> bool:
+    ``include_suffix`` adds a looser trailing-数 rule ("孩子数", "兄弟姐妹数").
+    It is used for hint suppression, which changes nothing, and deliberately
+    not for the demotion, which changes behaviour and stays conservative.
+    """
     name = str(column_name or "").lower()
     if any(keyword in name for keyword in COUNT_NAME_KEYWORDS):
         return True
-    # A trailing 数 usually marks a count ("孩子数", "兄弟姐妹数"), except where
-    # it closes a scoring word ("分数", "度数").
+    if not include_suffix:
+        return False
     return name.endswith("数") and not name.endswith(("分数", "度数"))
+
+
+def _name_demotes_scale(series: pd.Series, column_name: str | None = None) -> bool:
+    """True when the column name says count and does not say rating."""
+    name = column_name if column_name is not None else getattr(series, "name", None)
+    if not _column_name_suggests_count(name):
+        return False
+    named = series if column_name is None else series.rename(column_name)
+    return not _column_name_suggests_scale(named)
+
+
+def scale_demotion_reason(series: pd.Series, column_name: str | None = None) -> str | None:
+    """Why this column was kept numeric despite looking like a scale.
+
+    Returns None when no demotion applied. The reason is surfaced through
+    /detect so the user can see the call was made on the column *name*, and
+    reverse it with the ordinary manual override if the name misled us.
+    """
+    name = column_name if column_name is not None else getattr(series, "name", None)
+    if not _name_demotes_scale(series, column_name):
+        return None
+    if not _is_scale_by_values(series):
+        return None
+    matched = next(
+        (kw for kw in COUNT_NAME_KEYWORDS if kw in str(name or "").lower()), ""
+    )
+    return "count_name:%s" % matched
 
 
 def is_scale_candidate(series: pd.Series, column_name: str | None = None) -> bool:
@@ -193,9 +235,9 @@ def is_scale_candidate(series: pd.Series, column_name: str | None = None) -> boo
     if values.empty:
         return False
     # Already recognised as a scale: nothing to offer.
-    if _is_scale_question(series):
+    if _is_scale_question(series, column_name):
         return False
-    if _column_name_suggests_count(column_name):
+    if _column_name_suggests_count(column_name, include_suffix=True):
         return False
 
     integer_ratio = ((values - values.round()).abs() < 1e-9).mean()
@@ -222,6 +264,32 @@ def detect_scale_candidates(df: pd.DataFrame) -> dict[str, bool]:
         column: is_scale_candidate(df[column], column_name=column)
         for column in df.columns
     }
+
+
+def detect_scale_demotions(df: pd.DataFrame) -> dict[str, str]:
+    """Columns kept numeric because their name reads as a count."""
+    reasons = {}
+    for column in df.columns:
+        reason = scale_demotion_reason(df[column], column_name=column)
+        if reason:
+            reasons[column] = reason
+    return reasons
+
+
+def _is_scale_question(series: pd.Series, column_name: str | None = None) -> bool:
+    """Value rules, then the name-based demotion.
+
+    A column whose name reads as a count ("家庭人口数", "purchase_times") is kept
+    numeric even when its values sit inside a Likert window. Any count whose
+    range happens to land in 1-5 / 1-7 / 1-10 was being read as a scale, and a
+    misread count is the dangerous direction: it reaches the report and AI
+    layers and gets narrated as a rating. See docs/detection-benchmark.md.
+
+    A scoring keyword in the name wins, so "满意度分数" survives.
+    """
+    if _name_demotes_scale(series, column_name):
+        return False
+    return _is_scale_by_values(series)
 
 
 def detect_question_type(
@@ -276,12 +344,12 @@ def detect_question_type(
         if numeric_ratio >= 0.6:
             # _is_scale_question owns all scale rules (1-5/1-7/1-10 range,
             # integer ratio, decimal ratings via column-name keywords, "5分").
-            if _is_scale_question(series):
+            if _is_scale_question(series, column_name):
                 return QUESTION_TYPE_SCALE
             return QUESTION_TYPE_NUMERIC
 
         if is_numeric_dtype(series):
-            if _is_scale_question(series):
+            if _is_scale_question(series, column_name):
                 return QUESTION_TYPE_SCALE
             return QUESTION_TYPE_NUMERIC
 

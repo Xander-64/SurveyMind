@@ -41,6 +41,11 @@ from src.survey_gen.schema import (
 
 SEVERITY_ERROR = "error"
 SEVERITY_WARNING = "warning"
+# Worth surfacing, never worth acting on by itself. Used where a rule is right
+# in general but the convention it collides with is legitimate.
+SEVERITY_INFO = "info"
+
+_SEVERITY_ORDER = {SEVERITY_ERROR: 0, SEVERITY_WARNING: 1, SEVERITY_INFO: 2}
 
 SCOPE_QUESTION = "question"
 SCOPE_SECTION = "section"
@@ -237,15 +242,38 @@ def check_double_negative(survey: Survey) -> list[ValidationIssue]:
 
 
 def check_absolute_wording(survey: Survey) -> list[ValidationIssue]:
+    """Scope-limited rather than weakened.
+
+    On a real personality battery this fired five times out of five, every hit
+    on 总是 inside a trait statement ("对于事情我总是准备充分") — the standard
+    phrasing for such items, where 总是 is a scale anchor and not an absolutist
+    trap.
+
+    Dropping 总是 from the word list was considered and rejected: it would also
+    stop catching "您总是对我们的服务满意吗", which is the real defect this rule
+    exists for. Trading a rule's entire detection power for one false positive
+    is a bad deal.
+
+    So the scope narrows instead. Only stems are examined — option labels and
+    scale anchors never were, and must not be, since "从不 / 总是" is a perfectly
+    good unipolar anchor pair. Inside a declared construct's scale battery the
+    finding drops to info, because the convention is legitimate there. A
+    standalone satisfaction or yes/no item keeps the warning.
+    """
     issues: list[ValidationIssue] = []
     for _, question in survey.iter_questions():
+        in_battery = (
+            question.construct_id is not None
+            and question.question_type == QUESTION_TYPE_SCALE
+        )
+        severity = SEVERITY_INFO if in_battery else SEVERITY_WARNING
         for stem in _stems(question):
             marker = vocab.contains_any(stem, vocab.ABSOLUTE_MARKERS)
             if marker:
                 issues.append(
                     _issue(
                         "absolute_wording",
-                        SEVERITY_WARNING,
+                        severity,
                         SCOPE_QUESTION,
                         question.question_id,
                         evidence=stem,
@@ -746,7 +774,10 @@ def check_option_count(survey: Survey) -> list[ValidationIssue]:
     for _, question in survey.iter_questions():
         if question.question_type not in CHOICE_TYPES:
             continue
-        count = len(question.options)
+        # Residual codes ("other", "not applicable", "refused") are not
+        # substantive categories and should not push an item over the limit.
+        substantive = [option for option in question.options if not option.residual]
+        count = len(substantive)
         if count < MIN_OPTIONS:
             issues.append(
                 _issue(
@@ -976,7 +1007,7 @@ def validate_survey(survey: Survey) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     for rule in RULES:
         issues.extend(rule(survey))
-    return sorted(issues, key=lambda issue: 0 if issue.severity == SEVERITY_ERROR else 1)
+    return sorted(issues, key=lambda issue: _SEVERITY_ORDER.get(issue.severity, 3))
 
 
 def errors(issues: list[ValidationIssue]) -> list[ValidationIssue]:
@@ -985,3 +1016,7 @@ def errors(issues: list[ValidationIssue]) -> list[ValidationIssue]:
 
 def warnings(issues: list[ValidationIssue]) -> list[ValidationIssue]:
     return [issue for issue in issues if issue.severity == SEVERITY_WARNING]
+
+
+def infos(issues: list[ValidationIssue]) -> list[ValidationIssue]:
+    return [issue for issue in issues if issue.severity == SEVERITY_INFO]

@@ -112,6 +112,9 @@ NEUTRAL_MARKERS = (
 
 NEGATIVE_POLARITY_MARKERS = (
     "不同意", "不满意", "不重要", "不愿意", "不符合", "很差", "较差", "差",
+    # A real instrument anchored a scale "很不好 / 很好"; 不好 was missing, so the
+    # low end read as un-negative and the pair looked broken.
+    "不好", "不佳", "不行", "不高", "不足",
     "disagree", "dissatisfied", "unimportant", "unlikely", "poor", "bad",
 )
 
@@ -125,6 +128,10 @@ POSITIVE_POLARITY_MARKERS = (
 INTENSIFIER_TIERS = {
     "非常": 2, "极其": 2, "十分": 2, "极为": 2, "完全": 2,
     "比较": 1, "有些": 1, "稍微": 1, "略": 1,
+    # 不太 mirrors 比较 in the standard Chinese satisfaction anchor set
+    # ("非常不满意 / 不太满意 / 一般 / 比较满意 / 非常满意"). Without it the
+    # mirror check called that symmetric scale asymmetric.
+    "不太": 1, "不很": 1, "还算": 1, "有点": 1, "略微": 1,
     "strongly": 2, "extremely": 2, "very": 2, "completely": 2,
     "somewhat": 1, "slightly": 1, "moderately": 1, "fairly": 1,
 }
