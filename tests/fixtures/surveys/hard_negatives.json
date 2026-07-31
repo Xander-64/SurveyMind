@@ -1,0 +1,105 @@
+{
+  "_doc": [
+    "Stems that contain a coordinator but are NOT double-barreled.",
+    "The double_barreled rule must fire on none of these.",
+    "",
+    "A test set of obvious positives alone proves nothing: any implementation",
+    "that flags every coordinator would pass it, then produce a useless false",
+    "positive rate on real questionnaires. These hard negatives are the only",
+    "thing keeping the rule honest.",
+    "",
+    "Both language versions are checked, so both must be non-triggering."
+  ],
+  "cases": [
+    {
+      "id": "hn_companion_family",
+      "guard": "person",
+      "why": "「您和家人」describes who the respondent was with, not two things being judged. Splitting changes the question: the item is about eating together.",
+      "stem": {
+        "zh-CN": "您和家人一起用餐的频率是？",
+        "en": "How often do you eat out with your family?"
+      }
+    },
+    {
+      "id": "hn_companion_friends",
+      "guard": "person",
+      "why": "The coordinator joins the respondent to a companion; neither is an evaluation object.",
+      "stem": {
+        "zh-CN": "您与朋友讨论过本产品吗？",
+        "en": "Have you discussed this product with friends?"
+      }
+    },
+    {
+      "id": "hn_companion_colleagues",
+      "guard": "person",
+      "why": "「您和您的同事」is the subject of a single shared action, not two evaluated targets.",
+      "stem": {
+        "zh-CN": "您和您的同事是否共用同一个账号？",
+        "en": "Do you and your colleagues share one account?"
+      }
+    },
+    {
+      "id": "hn_compound_ratio",
+      "guard": "compound_concept",
+      "why": "「质量和价格的比值」is one concept. Split it and one half stops meaning anything.",
+      "stem": {
+        "zh-CN": "您如何评价质量和价格的比值？",
+        "en": "How would you rate the ratio between price and quality?"
+      }
+    },
+    {
+      "id": "hn_compound_relationship",
+      "guard": "compound_concept",
+      "why": "The item asks about the relationship between the two, which is a single object of judgement.",
+      "stem": {
+        "zh-CN": "您认为价格与质量之间的关系是否合理？",
+        "en": "Is the relationship between price and quality reasonable?"
+      }
+    },
+    {
+      "id": "hn_compound_value_for_money",
+      "guard": "compound_concept",
+      "why": "Value for money is a single established construct.",
+      "stem": {
+        "zh-CN": "请评价本产品的性价比。",
+        "en": "How would you rate the value for money?"
+      }
+    },
+    {
+      "id": "hn_joint_channels",
+      "guard": "joint_quantifier",
+      "why": "「都」makes it one conjoined claim: have you used BOTH. Splitting changes the proposition.",
+      "stem": {
+        "zh-CN": "线上和线下渠道您都使用过吗？",
+        "en": "Have you used both online and offline channels?"
+      }
+    },
+    {
+      "id": "hn_joint_scenarios",
+      "guard": "joint_quantifier",
+      "why": "Work and study are the setting, and 「都」asks whether both settings apply at once.",
+      "stem": {
+        "zh-CN": "您在工作和学习场景中都会使用它吗？",
+        "en": "Do you use it both at work and while studying?"
+      }
+    },
+    {
+      "id": "hn_joint_consider",
+      "guard": "joint_quantifier",
+      "why": "「同时」/ both asks about the joint consideration itself, which is one behaviour.",
+      "stem": {
+        "zh-CN": "您购买时会同时考虑价格和质量吗？",
+        "en": "Do you consider both price and quality when buying?"
+      }
+    },
+    {
+      "id": "hn_single_object",
+      "guard": "control",
+      "why": "Control case: one evaluation object, no coordinator at all. Must never fire.",
+      "stem": {
+        "zh-CN": "您平时更关注配送速度吗？",
+        "en": "Do you usually care more about delivery speed?"
+      }
+    }
+  ]
+}

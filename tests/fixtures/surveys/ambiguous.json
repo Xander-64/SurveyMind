@@ -1,0 +1,80 @@
+{
+  "_doc": [
+    "Stems where human annotators would disagree about whether the item is",
+    "double-barreled. These are deliberately NOT asserted pass or fail.",
+    "",
+    "Writing a pass/fail assertion over a genuinely contested reading would",
+    "freeze one arbitrary interpretation into the spec: every later improvement",
+    "to the rule would then collide with the assertion and look like a",
+    "regression, which turns the test from a guard rail into drag.",
+    "",
+    "Instead the test records current behaviour against the `current_behavior`",
+    "field below. A change there is not a failure — it is a prompt to confirm",
+    "the change was intended. Drift stays visible without a contested judgement",
+    "being dressed up as an objective standard.",
+    "",
+    "`current_behavior` is a snapshot, not a target. Update it deliberately."
+  ],
+  "cases": [
+    {
+      "id": "amb_service_and_products",
+      "why_contested": "Service and products are arguably two distinct targets, but the pair is also a common set phrase for the company as a whole.",
+      "current_behavior": "not_flagged",
+      "current_behavior_reason": "Only 服务 is in the evaluation-object list; 产品 is not, so the both-sides requirement is not met.",
+      "stem": {
+        "zh-CN": "您对我们的服务和产品满意吗？",
+        "en": "Are you satisfied with our service and products?"
+      }
+    },
+    {
+      "id": "amb_organisation_and_arrangement",
+      "why_contested": "Organisation and arrangement are near synonyms here; some readers see one impression, others two.",
+      "current_behavior": "not_flagged",
+      "current_behavior_reason": "Only 安排 is in the evaluation-object list.",
+      "stem": {
+        "zh-CN": "您觉得本次活动的组织和安排如何？",
+        "en": "How do you feel about the organisation and arrangement of this event?"
+      }
+    },
+    {
+      "id": "amb_professionalism_and_attitude",
+      "why_contested": "Highly correlated in practice, yet clearly separable: staff can be competent and rude.",
+      "current_behavior": "flagged",
+      "current_behavior_reason": "Both 专业性 and 态度 are evaluation objects and no guard applies.",
+      "stem": {
+        "zh-CN": "请评价客服人员的专业性和态度。",
+        "en": "Please rate the professionalism and attitude of our support staff."
+      }
+    },
+    {
+      "id": "amb_friendly_and_helpful",
+      "why_contested": "The textbook example, but many practitioners treat friendly-and-helpful as one overall impression of the interaction.",
+      "current_behavior": "not_flagged",
+      "current_behavior_reason": "Neither adjective is in the evaluation-object list, which holds nouns.",
+      "stem": {
+        "zh-CN": "工作人员是否友善且乐于助人？",
+        "en": "Was the staff friendly and helpful?"
+      }
+    },
+    {
+      "id": "amb_recommend_to_family_and_friends",
+      "why_contested": "Family and friends are two audiences a respondent may feel differently about, but the phrase is a fixed idiom in recommendation items.",
+      "current_behavior": "not_flagged",
+      "current_behavior_reason": "The person guard fires: both sides are companions, not evaluation objects.",
+      "stem": {
+        "zh-CN": "您是否愿意把本产品推荐给家人和朋友？",
+        "en": "Would you recommend this product to family and friends?"
+      }
+    },
+    {
+      "id": "amb_environment_and_atmosphere",
+      "why_contested": "Environment is physical, atmosphere is social; whether respondents separate them is an empirical question, not a linguistic one.",
+      "current_behavior": "flagged",
+      "current_behavior_reason": "Both 环境 and 氛围 are evaluation objects and no guard applies.",
+      "stem": {
+        "zh-CN": "本店的环境和氛围让您感到舒适吗？",
+        "en": "Did the environment and atmosphere make you comfortable?"
+      }
+    }
+  ]
+}

@@ -302,7 +302,7 @@ ValidationIssue = {
 
 | # | rule_id | 判定 | 严重度 | 可测试性 |
 | --- | --- | --- | --- | --- |
-| 1 | `double_barreled` | 去掉选项后的题干中出现并列连词（`和\|与\|以及\|并且\|、` / ` and \| or `）**且**两侧各含一个评价对象/行为词（内置词表：质量/速度/价格/服务/态度/界面…） | warning | ≥10 正例 + ≥10 反例。正：「对服务质量和配送速度是否满意」；反：「您和家人用餐的频率」 |
+| 1 | `double_barreled` | **见 §7.1.1 的正式判定标准** | warning | §7.1.1 + 困难反例 fixture |
 | 2 | `leading_question` | 命中倾向词表：`优秀的\|出色的\|糟糕的\|难道不\|不觉得\|众所周知` / `excellent\|obviously\|don't you agree` | warning | 词表逐词一例 |
 | 3 | `double_negative` | **先按逗号/分号/句号切分为分句，两个否定词必须落在同一分句内**才计数 | warning | 中文「不」进复合词频率过高（不错/不同/不仅/不过/对不起），白名单方案不可靠，故改用分句约束 + 降级为 warning |
 | 4 | `absolute_wording` | 命中 `总是\|从不\|所有\|全部\|每次\|绝对\|一定` / `always\|never\|all\|every` | warning | 问频率时「总是」是合法锚点 |
@@ -312,6 +312,51 @@ ValidationIssue = {
 
 \* 规则 7 虽是正则类，但**误伤代价低、漏报代价高**，且 §6 第 3 层（schema 无
 `validated_scale` 取值）已是硬保障，故此处仍取 warning，符合 §7.0。
+
+#### 7.1.1 规则 1 `double_barreled` 的正式判定标准 ★
+
+**标准（正式表述）**：
+
+> 一道题构成双筒问题 (double-barreled)，当且仅当其题干中的并列连词所连接的
+> **两个并列项同时处在「被评价对象」(evaluation object) 的位置**——即两者都是
+> 该题要求受访者作出判断的**标的**——而非描述**作答情境** (response context)，
+> 例如同伴、场景、渠道、时间等修饰成分。
+
+**操作化检验 (operationalization)**：
+
+> 把该题按并列项拆成两道独立的问题。**若同一名受访者可能对这两道题给出
+> 不同的答案，则原题为双筒。** 若拆分后题意改变、其中一问不成立、或两问
+> 必然同答，则不是双筒。
+
+这条操作化检验是判定的**唯一裁决依据**；下面的实现启发式只是它的近似。
+
+**实现启发式**（近似上述标准，不等于标准本身）：
+
+1. 定位并列连词（`和 | 与 | 以及 | 并且 | 、` / ` and | or `）；
+2. 取连词左右两侧的片段，要求**双侧各命中一个「可评价属性」词表条目**
+   （质量 / 速度 / 价格 / 服务 / 态度 / 界面 / 功能 / 性能 / 外观 / 售后 / 内容 / 方式…）；
+3. 三条**否决守卫 (guards)**，命中任一即判定为非双筒：
+   - **同伴守卫**：并列项为人称（家人 / 朋友 / 同事 / 同学 / 父母…）→ 描述作答情境；
+   - **复合概念守卫**：出现 `比值 | 比例 | 之比 | 比率 | 关系 | 差异 | 对比 | 之间` /
+     `ratio | relationship | difference | between` → 两项合成单一概念；
+   - **联合量词守卫**：出现 `都 | 均 | 同时` / `both` → 问的是「两者皆…」这一
+     单一联合命题，拆分会改变命题。
+
+**3 个正例（标注理由）**：
+
+| 题干 | 为什么是双筒 |
+| --- | --- |
+| 您对本店的**服务质量**和**配送速度**是否满意？ | 两项均为被评价标的。拆成两问后，一名受访者完全可能「对质量满意、对速度不满」→ 答案可不同 |
+| 这款产品的**外观设计**和**售后服务**是否达到您的预期？ | 两项是彼此独立的可评价属性，无必然相关，拆分后答案可不同 |
+| 您认为课程的**内容**和**授课方式**安排合理吗？ | 内容与形式是两个独立评价维度，可以「内容好但方式差」 |
+
+**3 个反例（标注理由）**：
+
+| 题干 | 为什么不是双筒 |
+| --- | --- |
+| 您**和家人**一起用餐的频率是？ | 「您和家人」是作答情境中的同伴关系，不是被评价对象。拆成「您用餐的频率」「家人用餐的频率」已改变题意，原题问的是「一起用餐」这一件事 → **同伴守卫** |
+| 您如何评价**质量和价格**的比值？ | 「质量和价格的比值」是单一复合概念（性价比）。拆开后该概念不复存在，其中一问不成立 → **复合概念守卫** |
+| **线上和线下**渠道您**都**使用过吗？ | 「都」把两项合成一个联合命题，问的是「是否两者皆有」。拆分改变了命题本身 → **联合量词守卫** |
 
 > **诚实说明**：规则 1、2、5 纯规则做不到高精度，误报是本模块最大技术风险。
 > 缓解：(a) 正反例测试集固化行为；(b) 前端允许 dismiss 单条 issue；
@@ -370,14 +415,54 @@ ValidationIssue = {
 - `tests/fixtures/surveys/golden_survey.json` —— 人工校准的合规问卷，
   断言 `validate_survey()` **返回 0 个 error**（最重要的回归护栏）。
 - `tests/fixtures/surveys/edge_cases.json` —— 每条规则一个最小违规反例。
+- **`tests/fixtures/surveys/hard_negatives.json`** ★ —— **含并列连词但不构成
+  双筒**的句子，**≥8 条**（「您和家人用餐的频率」「质量和价格的比值」
+  「线上和线下都使用过吗」等，中英各若干）。断言**规则 1 一条都不触发**。
+  **理由：只有明显正例的测试集没有意义**——任何「见到并列连词就报」的实现
+  都能通过纯正例测试集，却在真实问卷上误报率爆炸。困难反例是这条规则
+  唯一有效的护栏。
+- **`tests/fixtures/surveys/ambiguous.json`** ★ —— **人类标注也会分歧**的句子
+  （「您对我们的服务和产品满意吗」「客服人员的专业性和态度」
+  「Was the staff friendly and helpful?」等）。
+  **不进 pass/fail 断言**，只记录规则的**当前行为**（characterization record）。
 - 每条规则 ≥1 正例 + 1 反例；文本类 ≥5 + 5。
 - `make_survey(**overrides)` builder helper，避免每例手写整份 JSON。
+
+**为什么 `ambiguous.json` 被排除在断言之外**：
+
+这些句子的「正确答案」在人类标注者之间就不一致。对它们写 pass/fail 断言，
+等于把**其中一种任意读法固化成规范**——之后任何对规则的合理改进都会撞上
+这条断言而被误判为回归，测试于是从护栏退化成阻力。
+
+改为**记录当前行为**：测试读入这批句子，跑规则，把结果与快照比对；
+快照变化**不判失败，而是要求在 review 中显式确认**。这样规则行为的漂移
+始终可见，但不会把一个有争议的判断伪装成客观标准。
 
 ---
 
 ## 8. 分析计划生成（纯本地，零 LLM）
 
 `build_analysis_plan(survey) -> AnalysisPlan`。**所有统计量本地算，不交给 LLM。**
+
+### 8.0 通则：样本量一律以精确分布为权威 ★
+
+**凡是输出给用户执行的样本量 (`min_n`)，一律以精确分布搜索
+（`scipy.stats.nct` 等）在 n 上求得的最小值为权威。闭式公式只作对照，
+且必须在 caveat 中标注该闭式值的实际功效。**
+
+理由：`min_n` 是给用户执行的建议，**不能给出一个达不到声明功效的数字**。
+闭式正态近似系统性地高估功效，其给出的 n 通常比真实所需小 1–2。
+
+已按此通则确定的值（d=0.5, power=.8）：
+
+| 场景 | 闭式近似 | 闭式值的实际功效 | **权威值（精确）** |
+| --- | --- | --- | --- |
+| 两组均值，α=.05 | 63 | 0.7952 ✗ | **64** |
+| ANOVA k=3 → pairwise+Bonferroni，α′=.01667 | 84 | 0.7934 ✗ | **86** |
+| ANOVA k=4，α′=.00833 | 97 | 0.7917 ✗ | **99** |
+| ANOVA k=5，α′=.00500 | 107 | 0.7928 ✗ | **109** |
+
+**以后新增任何样本量场景直接按本通则执行，不再逐个确认。**
 
 ### 8.1 信度：Cronbach's α + 置信区间 + 题项-总分相关 ★
 
@@ -625,8 +710,10 @@ HTTP 400 `"No usable survey columns remain after preprocessing."`
 
 ```
 tests/
-├── fixtures/surveys/golden_survey.json
-├── fixtures/surveys/edge_cases.json
+├── fixtures/surveys/golden_survey.json     # 合规问卷，断言 0 error
+├── fixtures/surveys/edge_cases.json        # 逐规则最小违规反例
+├── fixtures/surveys/hard_negatives.json    # 含并列连词但非双筒，断言不触发
+├── fixtures/surveys/ambiguous.json         # 人类分歧句，只记录行为不断言
 ├── test_survey_schema.py
 ├── test_survey_validator.py
 ├── test_analysis_plan.py
@@ -840,7 +927,7 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 | 批 | 内容 | 工作量 | 可验证产出 |
 | --- | --- | --- | --- |
 | **0** ✅ | **拆分 `report_generator.py` → `src/report/` 包**：`common` / `llm_prompt` / `survey` / `general` / `mixed` / `dispatch`；`__init__.py` 导出公开 API；`report_generator.py` 降为 shim，re-export 全部 36 个名字（含 `_build_numeric_findings`） | 半天 | **已完成**：137 passed（基线 137），测试零改动，AST 逐函数比对 36/36 一致（方法见 §16） |
-| **1** | `survey_gen/schema.py` + `validator.py`（21 条规则，按 §7.0 校准严重度）+ 两份 fixture | 一天 | golden 问卷 0 error；每条规则正反例通过 |
+| **1** ✅ | `survey_gen/schema.py` + `vocabulary.py` + `validator.py`（22 个规则函数 / 34 个 rule_id）+ 四份 fixture + `i18n.VALIDATOR_RULE_TRANSLATIONS` | 一天 | **已完成**：229 passed（基线 137，新增 92）；golden 问卷 **0 error 且 0 warning**；34/34 rule_id 均有双语文案且被测试触达 |
 | **2** | `templates.py`（3-4 个本地主题模板）+ `export.py`（5 种导出）+ `synthetic.py` | 一天 | **第一个完整闭环，零 API key**：模板 → 校验 0 error → 导出 → 合成 200 行 → 喂 `/api/upload` → 200 且题型对得上 |
 | **3** | `analysis_plan.py`（§8.1 Feldt CI + item-total、§8.2 三组样本量**均以 nct 精确搜索为准**、§8.3 非参数分支 + §8.3.1 Somers' D 趋势检验）+ `test_detection_accuracy.py` + `docs/detection-benchmark.md` | 一天 | 分析计划表 + **混淆矩阵 + 语义规则误报率表** |
 | **4** | `llm_author.py`：prompt 骨架 + `_extract_json_block` + 结构校验 + 2 次重试 + 三态降级 | 一天 | mock `call_llm` 覆盖四条路径；无 key 自动走模板；引用过滤器有测试 |
@@ -877,6 +964,28 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 
 倾向 (a)，但迁移会改动 4 个测试文件，须与「重构批次测试零改动」的原则分开的
 独立批次里做，以免混淆「重构是否引入行为变更」的判断。
+
+### 15.1b 技术债：`is_metadata_column` 的语言不对称 ★（批 1 发现）
+
+`src/preprocessing.is_metadata_column` 实际只匹配**中文关键词 `时间` / `编号`**
+加上 **token `id`**（含 camelCase 拆分，故 `UserID` / `student_id` 命中）。
+
+**缺口**：英文时间戳列名一个都不认。实测：
+
+| 列名 | 判为元数据 |
+| --- | --- |
+| `提交时间` / `问卷编号` / `UserID` | ✅ |
+| `submit_time` / `timestamp` / `submitted_at` | ❌ |
+
+**为什么这对本模块要紧**：第三方平台的**英文导出**恰恰产出这类列名。
+回收数据里的 `submit_time` 不会被剔除，会进入问卷视图并被当成一道题参与
+题型识别与统计。这是既有实现的缺口，非批 1 引入。
+
+**处置**：本轮不改（改动 `is_metadata_column` 会牵动 `test_metadata` /
+`test_preprocessing` / `test_api` 三组契约测试）。已用
+`test_metadata_guard_is_asymmetric_across_languages` **固化当前行为**，
+使其可见。**修复归入批 7 的对齐层**——那里本来就要统一处理 `_meta_` 前缀
+（§5.3），两件事同源，一起改一次。
 
 ### 15.2 待确认
 

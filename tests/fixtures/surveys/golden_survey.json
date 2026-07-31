@@ -1,0 +1,896 @@
+{
+  "survey_id": "golden0000000000000000000000000f",
+  "title": {
+    "zh-CN": "产品服务体验调查",
+    "en": "Product service experience survey"
+  },
+  "primary_language": "zh-CN",
+  "description": {
+    "zh-CN": "本问卷用于了解您对本产品服务的真实感受。",
+    "en": "This questionnaire explores how you experience the product's service."
+  },
+  "created_at": 0.0,
+  "estimated_minutes": 5,
+  "constructs": [
+    {
+      "construct_id": "c_service",
+      "name": {
+        "zh-CN": "服务体验",
+        "en": "Service experience"
+      },
+      "definition": {
+        "zh-CN": "受访者对客服响应与处理过程的主观评价。",
+        "en": "How the respondent judges support responsiveness and handling."
+      },
+      "expected_direction": "positive"
+    },
+    {
+      "construct_id": "c_value",
+      "name": {
+        "zh-CN": "价值感知",
+        "en": "Perceived value"
+      },
+      "definition": {
+        "zh-CN": "受访者对付出与所得之间是否相称的判断。",
+        "en": "Whether the respondent judges what they paid to match what they got."
+      },
+      "expected_direction": "positive"
+    }
+  ],
+  "sections": [
+    {
+      "section_id": "S1",
+      "title": {
+        "zh-CN": "资格甄别",
+        "en": "Screening"
+      },
+      "purpose": "screening",
+      "intro": {
+        "zh-CN": "请先回答下面这道题。",
+        "en": "Please answer the question below first."
+      },
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q01",
+          "code": "used_recently",
+          "text": {
+            "zh-CN": "您最近三个月使用过本产品吗？",
+            "en": "Have you used this product in the past three months?"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "yes",
+              "label": {
+                "zh-CN": "是",
+                "en": "Yes"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "no",
+              "label": {
+                "zh-CN": "否",
+                "en": "No"
+              },
+              "order": 1,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S2",
+      "title": {
+        "zh-CN": "服务体验",
+        "en": "Service experience"
+      },
+      "purpose": "construct",
+      "intro": {
+        "zh-CN": "请根据您的实际感受作答。",
+        "en": "Please answer based on your own experience."
+      },
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q02",
+          "code": "srv_response",
+          "text": {
+            "zh-CN": "客服人员的响应速度让我满意。",
+            "en": "The support team replies quickly enough for me."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_service",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q03",
+          "code": "srv_resolve",
+          "text": {
+            "zh-CN": "客服人员能够解决我提出的问题。",
+            "en": "The support team resolves the problems I raise."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_service",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q04",
+          "code": "srv_respect",
+          "text": {
+            "zh-CN": "客服人员的态度让我感到被尊重。",
+            "en": "The support team treats me with respect."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_service",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q05",
+          "code": "srv_wait",
+          "text": {
+            "zh-CN": "我经常要等很久才能收到回复。",
+            "en": "I often wait a long time before I get a reply."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_service",
+          "reverse_coded": true,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S3",
+      "title": {
+        "zh-CN": "价值感知",
+        "en": "Perceived value"
+      },
+      "purpose": "construct",
+      "intro": null,
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q06",
+          "code": "val_worth",
+          "text": {
+            "zh-CN": "这款产品的定价让我觉得物有所值。",
+            "en": "The price of this product feels worth it to me."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_value",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q07",
+          "code": "val_recommend",
+          "text": {
+            "zh-CN": "我认为这款产品值得推荐给别人。",
+            "en": "I think this product is worth recommending to others."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_value",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q08",
+          "code": "val_repurchase",
+          "text": {
+            "zh-CN": "下次有需要时我还会选择它。",
+            "en": "I would choose it again next time I need one."
+          },
+          "question_type": "scale question",
+          "construct_id": "c_value",
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [],
+          "scale_spec": {
+            "points": 5,
+            "polarity": "bipolar",
+            "min_label": {
+              "zh-CN": "非常不同意",
+              "en": "Strongly disagree"
+            },
+            "max_label": {
+              "zh-CN": "非常同意",
+              "en": "Strongly agree"
+            },
+            "mid_label": {
+              "zh-CN": "一般",
+              "en": "Neutral"
+            },
+            "labels": [
+              {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              }
+            ]
+          },
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S4",
+      "title": {
+        "zh-CN": "使用情况",
+        "en": "Usage"
+      },
+      "purpose": "construct",
+      "intro": null,
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q09",
+          "code": "buy_channels",
+          "text": {
+            "zh-CN": "您通过哪些渠道购买过本产品？",
+            "en": "Which channels have you bought this product through?"
+          },
+          "question_type": "multiple-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "web",
+              "label": {
+                "zh-CN": "官方网站",
+                "en": "Official website"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "store",
+              "label": {
+                "zh-CN": "线下门店",
+                "en": "Physical store"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "third",
+              "label": {
+                "zh-CN": "第三方平台",
+                "en": "Third-party platform"
+              },
+              "order": 2,
+              "exclusive": false
+            },
+            {
+              "value": "none",
+              "label": {
+                "zh-CN": "以上都没有",
+                "en": "None of these"
+              },
+              "order": 3,
+              "exclusive": true
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S5",
+      "title": {
+        "zh-CN": "作答确认",
+        "en": "Response check"
+      },
+      "purpose": "attention",
+      "intro": null,
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q10",
+          "code": "attn_check",
+          "text": {
+            "zh-CN": "本题请选择「比较同意」，以确认您在认真作答。",
+            "en": "For this item please choose \"Agree\" to confirm you are reading carefully."
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": true,
+          "attention_expected_value": "a4",
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "a1",
+              "label": {
+                "zh-CN": "非常不同意",
+                "en": "Strongly disagree"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "a2",
+              "label": {
+                "zh-CN": "比较不同意",
+                "en": "Disagree"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "a3",
+              "label": {
+                "zh-CN": "一般",
+                "en": "Neutral"
+              },
+              "order": 2,
+              "exclusive": false
+            },
+            {
+              "value": "a4",
+              "label": {
+                "zh-CN": "比较同意",
+                "en": "Agree"
+              },
+              "order": 3,
+              "exclusive": false
+            },
+            {
+              "value": "a5",
+              "label": {
+                "zh-CN": "非常同意",
+                "en": "Strongly agree"
+              },
+              "order": 4,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S6",
+      "title": {
+        "zh-CN": "补充意见",
+        "en": "Further comments"
+      },
+      "purpose": "open_feedback",
+      "intro": null,
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q11",
+          "code": "open_feedback",
+          "text": {
+            "zh-CN": "如果有可以改进的地方，请写下您的想法。",
+            "en": "If anything could be improved, please write down your thoughts."
+          },
+          "question_type": "open-ended text question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": false,
+          "source": "generated",
+          "options": [],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": {
+            "max_length": 500,
+            "placeholder": {
+              "zh-CN": "选填",
+              "en": "Optional"
+            }
+          },
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    },
+    {
+      "section_id": "S7",
+      "title": {
+        "zh-CN": "基本信息",
+        "en": "About you"
+      },
+      "purpose": "demographic",
+      "intro": null,
+      "randomize_questions": false,
+      "questions": [
+        {
+          "question_id": "Q12",
+          "code": "gender",
+          "text": {
+            "zh-CN": "您的性别是？",
+            "en": "What is your gender?"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "f",
+              "label": {
+                "zh-CN": "女",
+                "en": "Woman"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "m",
+              "label": {
+                "zh-CN": "男",
+                "en": "Man"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "o",
+              "label": {
+                "zh-CN": "其他或不愿透露",
+                "en": "Other or prefer not to say"
+              },
+              "order": 2,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        },
+        {
+          "question_id": "Q13",
+          "code": "age_group",
+          "text": {
+            "zh-CN": "您所在的年龄段是？",
+            "en": "Which age group are you in?"
+          },
+          "question_type": "single-choice question",
+          "construct_id": null,
+          "reverse_coded": false,
+          "attention_check": false,
+          "attention_expected_value": null,
+          "required": true,
+          "source": "generated",
+          "options": [
+            {
+              "value": "u18",
+              "label": {
+                "zh-CN": "18 岁以下",
+                "en": "Under 18"
+              },
+              "order": 0,
+              "exclusive": false
+            },
+            {
+              "value": "a1825",
+              "label": {
+                "zh-CN": "18-25 岁",
+                "en": "18-25"
+              },
+              "order": 1,
+              "exclusive": false
+            },
+            {
+              "value": "a2635",
+              "label": {
+                "zh-CN": "26-35 岁",
+                "en": "26-35"
+              },
+              "order": 2,
+              "exclusive": false
+            },
+            {
+              "value": "a3645",
+              "label": {
+                "zh-CN": "36-45 岁",
+                "en": "36-45"
+              },
+              "order": 3,
+              "exclusive": false
+            },
+            {
+              "value": "o46",
+              "label": {
+                "zh-CN": "46 岁及以上",
+                "en": "46 or older"
+              },
+              "order": 4,
+              "exclusive": false
+            }
+          ],
+          "scale_spec": null,
+          "multi_select_limits": null,
+          "numeric_spec": null,
+          "open_spec": null,
+          "physical_encoding_hint": "delimited_single_column",
+          "display_logic": null
+        }
+      ]
+    }
+  ],
+  "response_metadata_spec": {
+    "schema_version": 1,
+    "enabled": false,
+    "column_prefix": "_meta_",
+    "fields": {
+      "duration_total_seconds": {
+        "column": "_meta_duration_total",
+        "dtype": "numeric"
+      },
+      "per_question_dwell": {
+        "column_pattern": "_meta_dwell_{question_id}",
+        "dtype": "numeric"
+      },
+      "dropout_position": {
+        "column": "_meta_dropout_at",
+        "dtype": "question_id"
+      },
+      "option_order_seed": {
+        "column": "_meta_option_seed",
+        "dtype": "string"
+      },
+      "per_question_option_order": {
+        "column_pattern": "_meta_order_{question_id}",
+        "dtype": "string(csv of option values)"
+      }
+    },
+    "source_mappings": {},
+    "collected_by": null
+  },
+  "generation_provenance": {
+    "llm_model": null,
+    "prompt_version": null,
+    "generated_at": null,
+    "user_brief": "hand-calibrated fixture, not generated",
+    "fallback_used": false
+  },
+  "schema_version": 1
+}

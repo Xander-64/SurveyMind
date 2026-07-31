@@ -1,0 +1,133 @@
+{
+  "_doc": [
+    "Minimal positives for the wording rules: each stem must trigger its rule.",
+    "",
+    "Only wording rules live here. Structural violations (codes, option counts,",
+    "construct sizes, ordering) are built in tests/test_survey_validator.py with",
+    "the make_survey helper, because their interesting content is shape rather",
+    "than natural language and a JSON file would obscure it.",
+    "",
+    "See hard_negatives.json for the matching negatives of double_barreled."
+  ],
+  "cases": {
+    "double_barreled": [
+      {
+        "why": "Both items are evaluation targets; a respondent could be happy with quality and unhappy with speed.",
+        "stem": {
+          "zh-CN": "您对本店的服务质量和配送速度是否满意？",
+          "en": "Are you satisfied with the service quality and the delivery speed?"
+        }
+      },
+      {
+        "why": "Appearance and after-sales support are independent attributes with no necessary correlation.",
+        "stem": {
+          "zh-CN": "这款产品的外观和售后是否达到您的预期？",
+          "en": "Did the design and the support meet your expectations?"
+        }
+      },
+      {
+        "why": "Content and delivery format are separate evaluation dimensions: the content can be good while the format is poor.",
+        "stem": {
+          "zh-CN": "您认为课程的内容和方式安排合理吗？",
+          "en": "Do you find the course content and the delivery design reasonable?"
+        }
+      }
+    ],
+    "leading_question": [
+      {
+        "why": "Presupposes the service is excellent before asking.",
+        "stem": {
+          "zh-CN": "您对我们优秀的客服服务有多满意？",
+          "en": "How satisfied are you with our excellent support service?"
+        }
+      },
+      {
+        "why": "Rhetorical framing pushes the respondent toward agreement.",
+        "stem": {
+          "zh-CN": "难道不觉得这个价格很划算吗？",
+          "en": "Don't you agree that this price is a bargain?"
+        }
+      }
+    ],
+    "double_negative": [
+      {
+        "why": "Two negations inside one clause invert the meaning under time pressure.",
+        "stem": {
+          "zh-CN": "您是否不认为这个功能没有帮助？",
+          "en": "Do you not think this feature is not helpful?"
+        }
+      },
+      {
+        "why": "Same pattern with a different negator pair.",
+        "stem": {
+          "zh-CN": "您不会没有注意到这个变化吧？",
+          "en": "You would not have failed to notice no change?"
+        }
+      }
+    ],
+    "absolute_wording": [
+      {
+        "why": "An absolute quantifier makes agreement almost impossible.",
+        "stem": {
+          "zh-CN": "本产品总是能满足您的需求吗？",
+          "en": "Does this product always meet your needs?"
+        }
+      },
+      {
+        "why": "\"All\" forces a single exception to flip the answer.",
+        "stem": {
+          "zh-CN": "所有功能都符合您的预期吗？",
+          "en": "Do all features meet your expectations?"
+        }
+      }
+    ],
+    "jargon": [
+      {
+        "why": "Domain metric a general respondent will not know.",
+        "stem": {
+          "zh-CN": "您认为本产品的复购率表现如何？",
+          "en": "How do you rate this product's retention?"
+        }
+      },
+      {
+        "why": "Unexplained acronyms on first use.",
+        "stem": {
+          "zh-CN": "本产品的 API 是否满足您的需要？",
+          "en": "Does the API meet your needs?"
+        }
+      }
+    ],
+    "question_length": [
+      {
+        "why": "Chinese stem well past the 40-character guideline.",
+        "stem": {
+          "zh-CN": "在您过去半年使用本产品的整个过程当中，综合考虑您在使用前的期待以及使用后的实际感受，您觉得这款产品的整体表现究竟如何呢？",
+          "en": "Overall, how did it go?"
+        }
+      },
+      {
+        "why": "English stem past the 25-word guideline.",
+        "stem": {
+          "zh-CN": "整体如何？",
+          "en": "Taking into account everything you expected before you started using this product as well as what you actually experienced afterwards, how would you describe the overall performance of it?"
+        }
+      }
+    ],
+    "fabricated_citation": [
+      {
+        "why": "Author-year citation pattern in a generated item.",
+        "stem": {
+          "zh-CN": "本题改编自 (Parasuraman 1988) 的服务质量测量。",
+          "en": "This item is adapted from (Parasuraman 1988)."
+        }
+      },
+      {
+        "why": "Claims to reproduce a named published instrument.",
+        "stem": {
+          "zh-CN": "以下题目来自 SERVQUAL 标准量表。",
+          "en": "The following items come from the SERVQUAL instrument."
+        }
+      }
+    ]
+  }
+}

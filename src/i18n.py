@@ -415,6 +415,363 @@ DATASET_MODE_LABEL_KEYS = {
 }
 
 
+# Methodology validator copy, keyed by rule_id (plain strings, so this module
+# stays free of any import from src.survey_gen). Mirrors the shape of
+# FIELD_ROLE_TRANSLATIONS rather than living in TRANSLATIONS: the messages take
+# parameters and there are enough of them to swamp the flat table.
+VALIDATOR_RULE_TRANSLATIONS = {
+    "double_barreled": {
+        "en": {
+            "message": "{qid} asks about two things at once ({left} / {right}).",
+            "suggestion": "Split it into two questions: a respondent could answer them differently.",
+        },
+        "zh-CN": {
+            "message": "{qid} 在一道题里同时问了两件事（{left} / {right}）。",
+            "suggestion": "拆成两道题：受访者可能对两者给出不同答案。",
+        },
+    },
+    "leading_question": {
+        "en": {
+            "message": "{qid} contains loaded wording: \"{marker}\".",
+            "suggestion": "Remove the value-laden adjective and let the respondent judge.",
+        },
+        "zh-CN": {
+            "message": "{qid} 含引导性措辞：「{marker}」。",
+            "suggestion": "去掉带倾向的修饰语，把判断留给受访者。",
+        },
+    },
+    "double_negative": {
+        "en": {
+            "message": "{qid} uses two negations in one clause: \"{clause}\".",
+            "suggestion": "Rewrite positively; double negatives are read wrong under time pressure.",
+        },
+        "zh-CN": {
+            "message": "{qid} 的同一分句内出现两个否定：「{clause}」。",
+            "suggestion": "改写为肯定句式；双重否定在快速作答时极易被理解反。",
+        },
+    },
+    "absolute_wording": {
+        "en": {
+            "message": "{qid} uses absolute wording: \"{marker}\".",
+            "suggestion": "Absolutes push respondents to disagree. Keep it only if the item really asks about frequency.",
+        },
+        "zh-CN": {
+            "message": "{qid} 使用了绝对化措辞：「{marker}」。",
+            "suggestion": "绝对化措辞会把受访者推向否定。除非本题确实在问频率，否则请改写。",
+        },
+    },
+    "jargon": {
+        "en": {
+            "message": "{qid} uses jargon or an unexplained acronym: \"{term}\".",
+            "suggestion": "Explain it in plain words, or gloss it in brackets on first use.",
+        },
+        "zh-CN": {
+            "message": "{qid} 含专业术语或未解释的缩写：「{term}」。",
+            "suggestion": "改用通俗表述，或首次出现时用括号解释。",
+        },
+    },
+    "question_length": {
+        "en": {
+            "message": "{qid} is long ({length} vs a {limit} guideline).",
+            "suggestion": "Shorten the stem; long items lose attention and raise drop-off.",
+        },
+        "zh-CN": {
+            "message": "{qid} 题干偏长（{length}，建议上限 {limit}）。",
+            "suggestion": "精简题干；过长的题目会降低注意力、抬高中途退出率。",
+        },
+    },
+    "fabricated_citation": {
+        "en": {
+            "message": "{qid} looks like it claims an external source: \"{evidence}\".",
+            "suggestion": "Generated items may not cite literature or claim to reproduce a published scale.",
+        },
+        "zh-CN": {
+            "message": "{qid} 疑似声称引用了外部来源：「{evidence}」。",
+            "suggestion": "生成的题目不得引用文献，也不得声称复制了已发表量表。",
+        },
+    },
+    "likert_points_forced_choice": {
+        "en": {
+            "message": "{qid} uses a {points}-point scale with no midpoint.",
+            "suggestion": (
+                "A forced-choice scale is a legitimate design against midpoint and acquiescence bias. "
+                "Cost: without the schema attached, the upload path reads it as a numeric question."
+            ),
+        },
+        "zh-CN": {
+            "message": "{qid} 使用 {points} 点量表（无中点）。",
+            "suggestion": (
+                "强迫选择是对抗中庸倾向与默许偏差的正当设计。"
+                "代价：不带 schema 上传时，分析端会把它识别为数值题。"
+            ),
+        },
+    },
+    "likert_points_coarse": {
+        "en": {
+            "message": "{qid} uses only {points} scale points.",
+            "suggestion": "Few points limit variance and discrimination. Consider 5 or 7.",
+        },
+        "zh-CN": {
+            "message": "{qid} 只有 {points} 个量表点。",
+            "suggestion": "点数过少会限制方差与区分度，建议改为 5 点或 7 点。",
+        },
+    },
+    "likert_points_invalid": {
+        "en": {
+            "message": "{qid} declares an unusable number of scale points: {points}.",
+            "suggestion": "A Likert item needs at least 2 points and at most 10.",
+        },
+        "zh-CN": {
+            "message": "{qid} 声明的量表点数不可用：{points}。",
+            "suggestion": "李克特题的点数至少为 2、至多为 10。",
+        },
+    },
+    "likert_label_count": {
+        "en": {
+            "message": "{qid} declares {points} points but {count} labels.",
+            "suggestion": "Give one label per point, or leave labels empty and rely on the endpoints.",
+        },
+        "zh-CN": {
+            "message": "{qid} 声明 {points} 点，却给了 {count} 个标签。",
+            "suggestion": "每个点一个标签，或干脆不给全表标签、只保留两端锚点。",
+        },
+    },
+    "likert_missing_neutral": {
+        "en": {
+            "message": "{qid} is a bipolar {points}-point scale whose middle label is not neutral: \"{label}\".",
+            "suggestion": "On a bipolar scale the midpoint should read as neutral (neither agree nor disagree).",
+        },
+        "zh-CN": {
+            "message": "{qid} 是 {points} 点双极量表，但中间项不是中性词：「{label}」。",
+            "suggestion": "双极量表的中点应当读作中立（既不同意也不反对）。",
+        },
+    },
+    "likert_endpoint_polarity": {
+        "en": {
+            "message": "{qid} endpoints are not opposite in polarity: \"{low}\" / \"{high}\".",
+            "suggestion": "The two ends of a scale should sit on opposite sides of the construct.",
+        },
+        "zh-CN": {
+            "message": "{qid} 两端标签极性不相反：「{low}」/「{high}」。",
+            "suggestion": "量表两端应位于该构念的相反两侧。",
+        },
+    },
+    "likert_intensity_mirror": {
+        "en": {
+            "message": "{qid} labels are not mirrored in intensity at positions {low_pos} and {high_pos}.",
+            "suggestion": "Mirrored positions should carry matching intensity, e.g. strongly / somewhat vs somewhat / strongly.",
+        },
+        "zh-CN": {
+            "message": "{qid} 的第 {low_pos} 与第 {high_pos} 个标签强度不对称。",
+            "suggestion": "镜像位置的强度应当对应，例如「非常/比较」对「比较/非常」。",
+        },
+    },
+    "likert_polarity_consistency": {
+        "en": {
+            "message": "Construct {cid} mixes scale formats: {formats}.",
+            "suggestion": "Items in one construct must share point count and polarity, or the composite score is meaningless.",
+        },
+        "zh-CN": {
+            "message": "构念 {cid} 内混用了不同的量表格式：{formats}。",
+            "suggestion": "同一构念的题项必须共用点数与极性，否则构念得分无意义。",
+        },
+    },
+    "matrix_rows_limit": {
+        "en": {
+            "message": "Section {sid} puts {count} items on one scale format.",
+            "suggestion": "Long matrices invite straight-lining. Split them or break the block up.",
+        },
+        "zh-CN": {
+            "message": "章节 {sid} 有 {count} 道题共用同一量表格式。",
+            "suggestion": "过长的矩阵题会诱发直线作答，建议拆分或打断。",
+        },
+    },
+    "matrix_rows_excessive": {
+        "en": {
+            "message": "Section {sid} puts {count} items on one scale format.",
+            "suggestion": "This is long enough that straight-lining is near certain. Split the matrix.",
+        },
+        "zh-CN": {
+            "message": "章节 {sid} 有 {count} 道题共用同一量表格式。",
+            "suggestion": "这个长度几乎必然产生直线作答，必须拆分。",
+        },
+    },
+    "question_order_screening": {
+        "en": {
+            "message": "Screening section {sid} appears after non-screening questions.",
+            "suggestion": "Screening questions must come first, or ineligible respondents answer the whole survey.",
+        },
+        "zh-CN": {
+            "message": "甄别章节 {sid} 排在了非甄别题之后。",
+            "suggestion": "甄别题必须放在最前，否则不合格的受访者会答完整份问卷。",
+        },
+    },
+    "question_order_demographic": {
+        "en": {
+            "message": "Demographic section {sid} is followed by other content.",
+            "suggestion": "Demographics belong at the end; asking them first raises drop-off and priming.",
+        },
+        "zh-CN": {
+            "message": "人口统计章节 {sid} 之后还有其他内容。",
+            "suggestion": "人口统计题应放在最后；放在前面会抬高中途退出率并造成启动效应。",
+        },
+    },
+    "construct_min_items": {
+        "en": {
+            "message": "Construct {cid} has only {count} item(s).",
+            "suggestion": (
+                "With fewer than 3 items the internal-consistency estimate is unstable "
+                "and the construct is under-represented."
+            ),
+        },
+        "zh-CN": {
+            "message": "构念 {cid} 只有 {count} 个题项。",
+            "suggestion": "少于 3 个题项时内部一致性估计不稳定，且构念内容覆盖不足。",
+        },
+    },
+    "construct_items_are_scale": {
+        "en": {
+            "message": "Construct {cid} contains a non-scale item {qid} ({qtype}).",
+            "suggestion": "Reliability and composite scores are only defined over scale items.",
+        },
+        "zh-CN": {
+            "message": "构念 {cid} 内含非量表题 {qid}（{qtype}）。",
+            "suggestion": "信度与构念得分只对量表题有定义。",
+        },
+    },
+    "reverse_coded_present": {
+        "en": {
+            "message": "The survey has no reverse-coded item.",
+            "suggestion": "At least one reverse-coded item is needed to detect acquiescence and straight-lining.",
+        },
+        "zh-CN": {
+            "message": "整份问卷没有任何反向计分题。",
+            "suggestion": "至少需要一道反向计分题，用于识别默许偏差与直线作答。",
+        },
+    },
+    "reverse_coded_per_construct": {
+        "en": {
+            "message": "Construct {cid} has {count} items but none reverse-coded.",
+            "suggestion": "Constructs of four or more items should carry a reverse-coded item.",
+        },
+        "zh-CN": {
+            "message": "构念 {cid} 有 {count} 个题项，但没有反向计分题。",
+            "suggestion": "题项数达到 4 个的构念应当包含一道反向计分题。",
+        },
+    },
+    "attention_check_present": {
+        "en": {
+            "message": "The survey has no attention-check item.",
+            "suggestion": "Add one instructed-response item so inattentive responses can be screened out.",
+        },
+        "zh-CN": {
+            "message": "整份问卷没有注意力检测题。",
+            "suggestion": "增加一道指令式题目，用于筛除不认真作答的样本。",
+        },
+    },
+    "attention_check_expected_value": {
+        "en": {
+            "message": "Attention check {qid} has no usable expected answer ({value}).",
+            "suggestion": "The expected value must match one of the item's option values.",
+        },
+        "zh-CN": {
+            "message": "注意力检测题 {qid} 没有可用的预期答案（{value}）。",
+            "suggestion": "预期答案必须与该题的某个选项值一致。",
+        },
+    },
+    "attention_check_position": {
+        "en": {
+            "message": "Attention check {qid} sits at the {position} of the survey.",
+            "suggestion": "Place it mid-survey, where attention actually decays.",
+        },
+        "zh-CN": {
+            "message": "注意力检测题 {qid} 位于问卷的{position}。",
+            "suggestion": "应放在问卷中段，那里才是注意力真正下降的位置。",
+        },
+    },
+    "option_count_too_few": {
+        "en": {
+            "message": "{qid} offers only {count} option(s).",
+            "suggestion": "A choice question needs at least two options.",
+        },
+        "zh-CN": {
+            "message": "{qid} 只有 {count} 个选项。",
+            "suggestion": "选择题至少需要两个选项。",
+        },
+    },
+    "option_count_too_many": {
+        "en": {
+            "message": "{qid} offers {count} options.",
+            "suggestion": "Long option lists cause position bias. Group them or drop rare ones.",
+        },
+        "zh-CN": {
+            "message": "{qid} 有 {count} 个选项。",
+            "suggestion": "过长的选项表会产生位置偏差，建议归并或删去罕见项。",
+        },
+    },
+    "option_mutual_exclusivity": {
+        "en": {
+            "message": "{qid} has {count} exclusive option(s), last one at position {position}.",
+            "suggestion": "Keep at most one exclusive option and put it last.",
+        },
+        "zh-CN": {
+            "message": "{qid} 有 {count} 个互斥选项，最后一个在第 {position} 位。",
+            "suggestion": "互斥选项最多保留一个，且应排在最后。",
+        },
+    },
+    "option_label_uniqueness": {
+        "en": {
+            "message": "{qid} repeats an option label: \"{label}\".",
+            "suggestion": "Duplicate labels make the answer ambiguous in the recovered data.",
+        },
+        "zh-CN": {
+            "message": "{qid} 的选项标签重复：「{label}」。",
+            "suggestion": "重复标签会让回收数据中的作答无法区分。",
+        },
+    },
+    "code_uniqueness": {
+        "en": {
+            "message": "Column code \"{code}\" is used by more than one question.",
+            "suggestion": "Codes become CSV column names, so they must be unique.",
+        },
+        "zh-CN": {
+            "message": "列名 code「{code}」被多道题重复使用。",
+            "suggestion": "code 会成为 CSV 列名，必须全局唯一。",
+        },
+    },
+    "code_shape": {
+        "en": {
+            "message": "Column code \"{code}\" ({qid}) is not a safe column name.",
+            "suggestion": "Use ASCII: a letter first, then letters, digits or underscores, 31 characters max.",
+        },
+        "zh-CN": {
+            "message": "列名 code「{code}」（{qid}）不是安全的列名。",
+            "suggestion": "请使用 ASCII：字母开头，其后为字母、数字或下划线，最长 31 个字符。",
+        },
+    },
+    "code_is_metadata": {
+        "en": {
+            "message": "Column code \"{code}\" ({qid}) reads as a metadata column.",
+            "suggestion": "The upload path drops ID/timestamp-looking columns, so this question would vanish.",
+        },
+        "zh-CN": {
+            "message": "列名 code「{code}」（{qid}）会被判定为元数据列。",
+            "suggestion": "上传管线会剔除形似 ID/时间戳的列，这道题会因此整列消失。",
+        },
+    },
+    "bilingual_completeness": {
+        "en": {
+            "message": "{scope_label} {target} is missing its {missing_language} text.",
+            "suggestion": "The frontend switches language without refetching, so both versions must exist.",
+        },
+        "zh-CN": {
+            "message": "{scope_label} {target} 缺少{missing_language}文案。",
+            "suggestion": "前端切换语言时不会重新请求，因此两种语言都必须存在。",
+        },
+    },
+}
+
+
 def t(language: str, key: str, **kwargs) -> str:
     language_map = TRANSLATIONS.get(language, TRANSLATIONS[DEFAULT_LANGUAGE])
     template = language_map.get(key, TRANSLATIONS[DEFAULT_LANGUAGE].get(key, key))
@@ -440,3 +797,23 @@ def translate_dataset_mode(language: str, mode: str) -> str:
 
 def translate_scale_level(language: str, level: str) -> str:
     return t(language, f"scale_level_{level}")
+
+
+def translate_validator_rule(language: str, rule_id: str, part: str = "message", **kwargs) -> str:
+    """Render one validator message or suggestion in the requested language.
+
+    Falls back the same way ``t`` does: unknown language -> English, unknown
+    rule -> the rule id itself, so a missing entry degrades to something
+    readable instead of raising mid-validation.
+    """
+    rule = VALIDATOR_RULE_TRANSLATIONS.get(rule_id)
+    if not rule:
+        return rule_id
+    template = rule.get(language, rule[DEFAULT_LANGUAGE]).get(part, "")
+    if not template:
+        return ""
+    try:
+        return template.format(**kwargs)
+    except (KeyError, IndexError):
+        # A missing parameter must not take the whole validation run down.
+        return template
