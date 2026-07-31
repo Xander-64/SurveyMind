@@ -269,8 +269,9 @@ def test_explained_acronym_is_not_jargon():
         (6, "likert_points_forced_choice", SEVERITY_WARNING),
         (3, "likert_points_coarse", SEVERITY_WARNING),
         (2, "likert_points_coarse", SEVERITY_WARNING),
+        (11, None, None),  # a 0-10 scale is 11 points and perfectly ordinary
         (0, "likert_points_invalid", SEVERITY_ERROR),
-        (11, "likert_points_invalid", SEVERITY_ERROR),
+        (12, "likert_points_invalid", SEVERITY_ERROR),
     ],
 )
 def test_likert_points_are_tiered_not_pass_fail(points, expected_rule, expected_severity):

@@ -72,7 +72,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -100,7 +101,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -128,7 +130,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -156,7 +159,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -184,7 +188,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -212,7 +217,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -251,7 +257,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -279,7 +286,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -307,7 +315,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -335,7 +344,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -363,7 +373,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -391,7 +402,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -430,7 +442,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -458,7 +471,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -486,7 +500,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -514,7 +529,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -542,7 +558,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -570,7 +587,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -598,7 +616,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -626,7 +645,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -654,7 +674,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -682,7 +703,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -710,7 +732,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -749,7 +772,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -777,7 +801,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -805,7 +830,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -833,7 +859,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -861,7 +888,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -889,7 +917,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -917,7 +946,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -945,7 +975,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -984,7 +1015,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1012,7 +1044,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1040,7 +1073,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1068,7 +1102,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1096,7 +1131,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1124,7 +1160,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 0
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1347,7 +1384,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1375,7 +1413,8 @@
             "min_label": null,
             "max_label": null,
             "mid_label": null,
-            "labels": null
+            "labels": null,
+            "min_value": 1
           },
           "multi_select_limits": null,
           "numeric_spec": null,
@@ -1781,7 +1820,14 @@
     ],
     "reason": "third-party questionnaire copyright; see docs/external-validity-check.md",
     "fallback_used": false,
-    "note_on_construct_names": "Construct names and ids are our own modelling labels for the instrument's visible groupings; the source ships no construct table. They are not third-party prose."
+    "note_on_construct_names": "Construct names and ids are our own modelling labels for the instrument's visible groupings; the source ships no construct table. They are not third-party prose.",
+    "status": "PRIMARY ARTIFACT - maintained by hand, no longer derived",
+    "why": "This file used to be generated from a local, git-ignored transcription. That made a committed 1787-line artifact that CI depends on unreproducible the moment the local source was lost. The derivation is terminated: edit this file directly. The original generator is kept only as a historical record of how the structure was first extracted.",
+    "editing": "Hand-edit. Keep the scale shapes intact - 8 items at points=11/min_value=0, 19 at points=4, 12 at points=5 - because the external-validity counts in tests/test_survey_external_validity.py are asserted against them."
   },
-  "schema_version": 1
+  "schema_version": 1,
+  "languages": [
+    "zh-CN"
+  ],
+  "administration_mode": "interviewer_administered"
 }

@@ -362,6 +362,23 @@
       });
     });
 
+    /* The API marks numeric columns that could be a 0-10 style scale. It never
+       changes the type on its own: a count of purchases and an NPS rating look
+       identical in the data, and guessing wrong would have the report narrate
+       "3.2 purchases" as "a 3.2 rating". So the ambiguity is shown to the one
+       person who knows, and resolved through the existing override. */
+    function scaleHint(t) {
+      if (!t.scale_candidate) {
+        return '<span class="mono" style="font-size:11px;color:var(--muted)">—</span>';
+      }
+      return '<button class="sm-scale-hint" data-column="' + esc(t.column) + '" ' +
+        'style="border:1px solid var(--accent-line);background:var(--accent-soft);' +
+        'color:var(--accent);border-radius:var(--r-sm);padding:3px 8px;font-size:11px;' +
+        'cursor:pointer;line-height:1.3;text-align:left;">' +
+        '<span class="zh">可能是 0-10 量表 · 改为量表题</span>' +
+        '<span class="en">Might be a 0-10 scale &middot; set as scale</span></button>';
+    }
+
     var tbody = screen.querySelector("table.dt tbody");
     if (!tbody) return;
     tbody.innerHTML = dt.types.map(function (t) {
@@ -377,7 +394,7 @@
         '<td class="num-cell">' + (m.unique_values !== undefined ? m.unique_values : "—") + "</td>" +
         '<td class="num-cell"' + missStyle + ">" + fmtNum(missPct, 1) + "%</td>" +
         "<td>" + typeBadge(t.short) + "</td>" +
-        '<td><span class="mono" style="font-size:11px;color:var(--muted)">—</span></td>' +
+        "<td>" + scaleHint(t) + "</td>" +
         '<td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">' + esc(selLabel) +
         '</span><span class="en">' + esc(TYPE_EN[t.short]) + '</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>' +
         "</tr>";
@@ -405,6 +422,18 @@
         }).then(loadAll).catch(showError);
       });
       selEl.value = t.short;
+    });
+
+    /* accepting the hint is the same override the dropdown performs */
+    $all(".sm-scale-hint", tbody).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!state.sessionId) return;
+        api("/api/" + state.sessionId + "/types", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column: btn.getAttribute("data-column"), type: "scale" }),
+        }).then(loadAll).catch(showError);
+      });
     });
 
     var resetBtn = screen.querySelector(".head-actions .btn.ghost");

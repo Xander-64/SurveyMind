@@ -63,6 +63,7 @@ from src.question_type_detector import (
     QUESTION_TYPE_SCALE,
     QUESTION_TYPE_SINGLE,
     detect_question_types,
+    detect_scale_candidates,
 )
 from src.report import (
     build_dataset_summary,
@@ -373,7 +374,17 @@ def overview(session_id: str):
     }
 
 
-def _detect_payload(meta: dict) -> dict:
+def _detect_payload(meta: dict, df: pd.DataFrame | None = None) -> dict:
+    """Question types, plus a per-column scale hint.
+
+    ``scale_candidate`` marks a numeric column that could be a 0-10 style scale
+    the detector will not claim on its own. It never changes the type: a count
+    of purchases and an NPS rating are identical in their values, so guessing
+    risks narrating "3.2 purchases" as "a 3.2 rating" in the report. The hint
+    surfaces the ambiguity for the one person who knows the answer, who
+    resolves it through the existing POST /types override.
+    """
+    candidates = detect_scale_candidates(df) if df is not None else {}
     counts: dict[str, int] = {}
     types = []
     for column, q_type in meta["question_types"].items():
@@ -385,6 +396,11 @@ def _detect_payload(meta: dict) -> dict:
                 "type": q_type,
                 "short": short,
                 "type_zh": translate_question_type("zh-CN", q_type),
+                # Only offer the hint where it means something: a column the
+                # active type still calls numeric. Once it has been overridden
+                # the question is settled and repeating the hint is noise.
+                "scale_candidate": bool(candidates.get(column, False))
+                and q_type == QUESTION_TYPE_NUMERIC,
             }
         )
     return {"types": types, "counts": counts}
@@ -392,8 +408,8 @@ def _detect_payload(meta: dict) -> dict:
 
 @app.get("/api/{session_id}/detect")
 def detect(session_id: str):
-    _, meta = _load_session(session_id)
-    return _detect_payload(meta)
+    df, meta = _load_session(session_id)
+    return _detect_payload(meta, df)
 
 
 @app.post("/api/{session_id}/types")
@@ -410,16 +426,16 @@ def override_type(session_id: str, body: dict):
 
     meta["question_types"][column] = full_type
     _store_meta(session_id, meta)
-    return _detect_payload(meta)
+    return _detect_payload(meta, df)
 
 
 @app.delete("/api/{session_id}/types")
 def reset_types(session_id: str):
     """Discard manual overrides, restoring the original auto-detected types."""
-    _, meta = _load_session(session_id)
+    df, meta = _load_session(session_id)
     meta["question_types"] = dict(meta.get("detected_types") or meta["question_types"])
     _store_meta(session_id, meta)
-    return _detect_payload(meta)
+    return _detect_payload(meta, df)
 
 
 @app.get("/api/{session_id}/stats")

@@ -305,3 +305,40 @@ def test_ai_report_mode_llm_failure_degrades(client, monkeypatch):
 def test_ai_report_mode_invalid_400(client):
     sid = _upload(client, "sample_general.csv")["session_id"]
     assert client.post(f"/api/{sid}/ai-report", json={"mode": "banana"}).status_code == 400
+
+
+def test_detect_marks_zero_based_scale_candidates_without_changing_types(client):
+    """The hint is advisory: the column stays a numeric question.
+
+    A 0-10 rating and a 0-10 count are identical in their values, so the API
+    surfaces the ambiguity rather than resolving it. Accepting the hint goes
+    through the same POST /types override a user would use by hand.
+    """
+    csv = "nps_score,purchase_count,satisfaction\n" + "\n".join(
+        "%d,%d,%d" % (i % 11, i % 11, (i % 5) + 1) for i in range(60)
+    )
+    session_id = client.post(
+        "/api/upload", files={"file": ("scales.csv", csv, "text/csv")}
+    ).json()["session_id"]
+
+    by_column = {item["column"]: item for item in client.get(f"/api/{session_id}/detect").json()["types"]}
+
+    # 0-10 rating: not claimed as a scale, but flagged for the user
+    assert by_column["nps_score"]["short"] == "num"
+    assert by_column["nps_score"]["scale_candidate"] is True
+
+    # identical values, but the name says count — no hint, no noise
+    assert by_column["purchase_count"]["short"] == "num"
+    assert by_column["purchase_count"]["scale_candidate"] is False
+
+    # already a scale: nothing to offer
+    assert by_column["satisfaction"]["short"] == "scale"
+    assert by_column["satisfaction"]["scale_candidate"] is False
+
+    # accepting the hint uses the existing override endpoint
+    accepted = client.post(
+        f"/api/{session_id}/types", json={"column": "nps_score", "type": "scale"}
+    ).json()
+    accepted_by_column = {item["column"]: item for item in accepted["types"]}
+    assert accepted_by_column["nps_score"]["short"] == "scale"
+    assert accepted_by_column["nps_score"]["scale_candidate"] is False

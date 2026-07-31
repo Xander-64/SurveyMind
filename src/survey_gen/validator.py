@@ -26,14 +26,16 @@ from src.question_type_detector import (
 from src.survey_gen import vocabulary as vocab
 from src.survey_gen.schema import (
     POLARITY_BIPOLAR,
-    SCALE_POINTS_CLEAN,
     SCALE_POINTS_COARSE,
+    SCALE_POINTS_CONVENTIONAL,
     SCALE_POINTS_FORCED_CHOICE,
+    SCALE_POINTS_MAX,
     SECTION_PURPOSE_DEMOGRAPHIC,
     SECTION_PURPOSE_RANK,
     SECTION_PURPOSE_SCREENING,
     Question,
     Survey,
+    mode_policy,
     text_in,
 )
 
@@ -283,6 +285,9 @@ def check_jargon(survey: Survey) -> list[ValidationIssue]:
 
 
 def check_question_length(survey: Survey) -> list[ValidationIssue]:
+    """Limits come from MODE_POLICY: a stem read aloud can carry more than
+    one the respondent has to read off a screen."""
+    policy = mode_policy(survey)
     issues: list[ValidationIssue] = []
     for _, question in survey.iter_questions():
         for language, stem in (question.text or {}).items():
@@ -290,7 +295,7 @@ def check_question_length(survey: Survey) -> list[ValidationIssue]:
                 continue
             if language == "en":
                 words = len(stem.split())
-                if words > MAX_STEM_WORDS_EN:
+                if words > policy["max_stem_words_en"]:
                     issues.append(
                         _issue(
                             "question_length",
@@ -300,11 +305,11 @@ def check_question_length(survey: Survey) -> list[ValidationIssue]:
                             evidence=stem,
                             qid=question.question_id,
                             length="%d words" % words,
-                            limit="%d-word" % MAX_STEM_WORDS_EN,
+                            limit="%d-word" % policy["max_stem_words_en"],
                         )
                     )
                     break
-            elif len(stem) > MAX_STEM_CHARS_ZH:
+            elif len(stem) > policy["max_stem_chars_zh"]:
                 issues.append(
                     _issue(
                         "question_length",
@@ -359,13 +364,15 @@ def check_fabricated_citation(survey: Survey) -> list[ValidationIssue]:
 
 
 def check_likert_points(survey: Survey) -> list[ValidationIssue]:
-    """Tiered, not pass/fail.
+    """Tiered, and deliberately decoupled from the detector.
 
-    The detector only recognises 1-5 / 1-7 / 1-10 ranges, but that is an
-    implementation detail of our own code and must not be allowed to outlaw a
-    legitimate design. 4- and 6-point forced-choice scales are deliberate
-    instruments against midpoint and acquiescence bias; they get a warning that
-    explains the cost, not an error.
+    An earlier version justified the tiers by what src.question_type_detector
+    recognises. That was both wrong on the facts (4- and 6-point scales are
+    recognised; zero-based ones are not) and wrong in principle: our own
+    detector's range check is an implementation detail and must not decide
+    which instrument designs are allowed. The tiers below are a methodology
+    judgement only. The detector's blind spot is handled separately, by a hint
+    that asks the user rather than by a rule that forbids the design.
     """
     issues: list[ValidationIssue] = []
     for _, question in survey.iter_questions():
@@ -373,25 +380,44 @@ def check_likert_points(survey: Survey) -> list[ValidationIssue]:
         if question.question_type != QUESTION_TYPE_SCALE or spec is None:
             continue
         points = spec.points
-        if points in SCALE_POINTS_CLEAN:
-            continue
-        if points in SCALE_POINTS_FORCED_CHOICE:
+        if points < 2 or points > SCALE_POINTS_MAX:
+            rule_id, severity = "likert_points_invalid", SEVERITY_ERROR
+        elif points in SCALE_POINTS_FORCED_CHOICE:
             rule_id, severity = "likert_points_forced_choice", SEVERITY_WARNING
         elif points in SCALE_POINTS_COARSE:
             rule_id, severity = "likert_points_coarse", SEVERITY_WARNING
+        elif points in SCALE_POINTS_CONVENTIONAL:
+            continue
         else:
-            rule_id, severity = "likert_points_invalid", SEVERITY_ERROR
+            # 8 or 9 points: unusual but not defective.
+            continue
         issues.append(
-            _issue(
-                rule_id,
-                severity,
-                SCOPE_QUESTION,
-                question.question_id,
-                evidence="points=%s" % points,
-                qid=question.question_id,
-                points=points,
-            )
+            _issue(rule_id, severity, SCOPE_QUESTION, question.question_id,
+                   evidence="points=%s" % points, qid=question.question_id, points=points)
         )
+    return issues
+
+
+def check_likert_zero_based(survey: Survey) -> list[ValidationIssue]:
+    """A zero-based scale is standard practice; it just needs the schema.
+
+    0-10 is one of the most widely used formats there is. The only cost is that
+    a recovered CSV without this schema attached reads it as a numeric column,
+    because the detector will not guess (see docs/detection-benchmark.md for
+    why guessing is worse than asking).
+    """
+    issues: list[ValidationIssue] = []
+    for _, question in survey.iter_questions():
+        spec = question.scale_spec
+        if question.question_type != QUESTION_TYPE_SCALE or spec is None:
+            continue
+        if spec.is_zero_based:
+            issues.append(
+                _issue("likert_points_zero_based", SEVERITY_WARNING, SCOPE_QUESTION,
+                       question.question_id,
+                       evidence="%d-%d" % (spec.min_value, spec.max_value),
+                       qid=question.question_id, low=spec.min_value, high=spec.max_value)
+            )
     return issues
 
 
@@ -517,6 +543,9 @@ def check_likert_polarity_consistency(survey: Survey) -> list[ValidationIssue]:
 
 
 def check_matrix_rows_limit(survey: Survey) -> list[ValidationIssue]:
+    """Thresholds come from MODE_POLICY: showcards and a live interviewer
+    hold attention through longer grids than a web form does."""
+    policy = mode_policy(survey)
     issues: list[ValidationIssue] = []
     for section in survey.sections:
         groups: dict[tuple, int] = {}
@@ -525,9 +554,9 @@ def check_matrix_rows_limit(survey: Survey) -> list[ValidationIssue]:
                 key = (question.scale_spec.points, question.scale_spec.polarity)
                 groups[key] = groups.get(key, 0) + 1
         for count in groups.values():
-            if count > MATRIX_ROWS_ERROR:
+            if count > policy["matrix_rows_error"]:
                 rule_id, severity = "matrix_rows_excessive", SEVERITY_ERROR
-            elif count > MATRIX_ROWS_WARN:
+            elif count > policy["matrix_rows_warn"]:
                 rule_id, severity = "matrix_rows_limit", SEVERITY_WARNING
             else:
                 continue
@@ -653,7 +682,10 @@ def check_attention_check(survey: Survey) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     questions = survey.all_questions()
     checks = [question for question in questions if question.attention_check]
-    if questions and not checks:
+    # Instructed-response items are a self-administered convention. Requiring
+    # one of an interviewer-administered instrument applies the norms of one
+    # mode to another.
+    if questions and not checks and mode_policy(survey)["requires_attention_check"]:
         issues.append(
             _issue("attention_check_present", SEVERITY_ERROR, SCOPE_SURVEY, None)
         )
@@ -884,8 +916,15 @@ def _bilingual_issue(scope: str, target_id: str | None, target: str, language: s
 
 
 def check_bilingual_completeness(survey: Survey) -> list[ValidationIssue]:
+    """Only the languages the instrument claims to be offered in.
+
+    Demanding two languages of a monolingual instrument is a product
+    opinion, not a methodology finding, and on a real questionnaire it was
+    over half of every issue raised — enough noise to make the rest
+    unreadable.
+    """
     issues: list[ValidationIssue] = []
-    for language in ("zh-CN", "en"):
+    for language in survey.languages:
         if not (survey.title or {}).get(language):
             issues.append(_bilingual_issue(SCOPE_SURVEY, survey.survey_id, "title", language))
         for section in survey.sections:
@@ -914,6 +953,7 @@ RULES: tuple[Callable[[Survey], list[ValidationIssue]], ...] = (
     check_question_length,
     check_fabricated_citation,
     check_likert_points,
+    check_likert_zero_based,
     check_likert_label_symmetry,
     check_likert_polarity_consistency,
     check_matrix_rows_limit,

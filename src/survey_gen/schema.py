@@ -72,11 +72,52 @@ POLARITY_UNIPOLAR = "unipolar"
 POLARITY_BIPOLAR = "bipolar"
 POLARITIES = (POLARITY_UNIPOLAR, POLARITY_BIPOLAR)
 
-# Points the detector recognises as a Likert range (see _is_scale_question).
-SCALE_POINTS_CLEAN = (5, 7, 10)
-# Legitimate forced-choice designs; flagged only to explain the cost.
+# Conventional point counts. This is a methodology judgement and is deliberately
+# independent of what src.question_type_detector happens to recognise: the
+# detector's range check is an implementation detail of our own code and must
+# not be allowed to outlaw a valid instrument design.
+SCALE_POINTS_CONVENTIONAL = (5, 7, 10, 11)
+# Legitimate forced-choice designs; flagged only to comment on the trade-off.
 SCALE_POINTS_FORCED_CHOICE = (4, 6)
 SCALE_POINTS_COARSE = (2, 3)
+SCALE_POINTS_MAX = 11
+
+# Administration mode. Several rules only make sense under one of these, so it
+# is a general precondition carried in MODE_POLICY rather than a special case
+# bolted onto any single rule.
+ADMIN_MODE_SELF = "self_administered"
+ADMIN_MODE_INTERVIEWER = "interviewer_administered"
+ADMIN_MODES = (ADMIN_MODE_SELF, ADMIN_MODE_INTERVIEWER)
+
+# One table, read by every mode-dependent rule. Adding a mode-sensitive rule
+# later means adding a key here, not adding another branch to the rule.
+MODE_POLICY = {
+    ADMIN_MODE_SELF: {
+        # Nobody is watching the respondent, so inattention has to be measured.
+        "requires_attention_check": True,
+        # The respondent reads the stem themselves off a screen.
+        "max_stem_chars_zh": 40,
+        "max_stem_words_en": 25,
+        # Long grids invite straight-lining when self-completed.
+        "matrix_rows_warn": 8,
+        "matrix_rows_error": 12,
+        # Reserved for a future rule: an explicit "don't know" is a courtesy
+        # online but a convention in interviewing. No rule reads this yet.
+        "expects_dont_know_option": False,
+    },
+    ADMIN_MODE_INTERVIEWER: {
+        # An interviewer is present; instructed-response items are a
+        # self-administered convention and misfire here.
+        "requires_attention_check": False,
+        # The stem is read aloud, so it can carry more.
+        "max_stem_chars_zh": 60,
+        "max_stem_words_en": 40,
+        # Showcards and a live interviewer hold attention through longer grids.
+        "matrix_rows_warn": 12,
+        "matrix_rows_error": 16,
+        "expects_dont_know_option": True,
+    },
+}
 
 QUESTION_SOURCE_GENERATED = "generated"
 
@@ -108,13 +149,26 @@ class Option:
 
 @dataclass
 class ScaleSpec:
+    # Number of response points. Kept separate from the value range: a 0-10
+    # scale is 11 points starting at 0, and conflating the two is what made
+    # "points" ambiguous in the first place.
     points: int
+    # Lowest coded value. 1 for the usual 1-5 / 1-7, 0 for NPS-style 0-10.
+    min_value: int = 1
     polarity: str = POLARITY_BIPOLAR
     min_label: LocalizedText | None = None
     max_label: LocalizedText | None = None
     mid_label: LocalizedText | None = None
     # Full per-point labels. Optional, but the symmetry checks need them.
     labels: list[LocalizedText] | None = None
+
+    @property
+    def max_value(self) -> int:
+        return self.min_value + self.points - 1
+
+    @property
+    def is_zero_based(self) -> bool:
+        return self.min_value < 1
 
 
 @dataclass
@@ -210,6 +264,14 @@ class Survey:
     survey_id: str
     title: LocalizedText
     primary_language: str = "zh-CN"
+    # Languages this instrument is actually offered in. bilingual_completeness
+    # checks only these: demanding two languages of a monolingual instrument
+    # is a product opinion, not a methodology finding, and it drowns the
+    # signal (it was over half of all issues on a real questionnaire).
+    languages: list[str] = field(default_factory=lambda: ["zh-CN", "en"])
+    # Drives MODE_POLICY. Defaults to self-administered because that is what
+    # this tool generates; a transcribed interviewer instrument declares it.
+    administration_mode: str = ADMIN_MODE_SELF
     description: LocalizedText | None = None
     created_at: float = 0.0
     estimated_minutes: int = 0
@@ -277,6 +339,7 @@ def _scale_from_dict(payload: dict[str, Any] | None) -> ScaleSpec | None:
         return None
     return ScaleSpec(
         points=int(payload.get("points", 0)),
+        min_value=int(payload.get("min_value", 1)),
         polarity=payload.get("polarity", POLARITY_BIPOLAR),
         min_label=payload.get("min_label"),
         max_label=payload.get("max_label"),
@@ -327,6 +390,8 @@ def _survey_from_dict(payload: dict[str, Any]) -> Survey:
         survey_id=payload["survey_id"],
         title=payload.get("title") or {},
         primary_language=payload.get("primary_language", "zh-CN"),
+        languages=list(payload.get("languages") or ["zh-CN", "en"]),
+        administration_mode=payload.get("administration_mode", ADMIN_MODE_SELF),
         description=payload.get("description"),
         created_at=float(payload.get("created_at", 0.0)),
         estimated_minutes=int(payload.get("estimated_minutes", 0)),
@@ -358,3 +423,8 @@ def _survey_from_dict(payload: dict[str, Any]) -> Survey:
         generation_provenance=payload.get("generation_provenance") or {},
         schema_version=int(payload.get("schema_version", SCHEMA_VERSION)),
     )
+
+
+def mode_policy(survey: "Survey") -> dict[str, Any]:
+    """Rule parameters for this survey's administration mode."""
+    return MODE_POLICY.get(survey.administration_mode, MODE_POLICY[ADMIN_MODE_SELF])

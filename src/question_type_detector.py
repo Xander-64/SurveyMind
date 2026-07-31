@@ -150,6 +150,80 @@ def _is_scale_question(series: pd.Series) -> bool:
     return integer_ratio >= 0.8
 
 
+# Column names that lean towards a count rather than a rating. Used only to
+# reduce noise in the scale_candidate hint below — never to decide a type.
+COUNT_NAME_KEYWORDS = (
+    "次数", "个数", "数量", "人数", "天数", "频次", "件数", "笔数",
+    "count", "number", "times", "qty", "num_", "_num",
+)
+
+
+def _column_name_suggests_count(column_name: str | None) -> bool:
+    name = str(column_name or "").lower()
+    if any(keyword in name for keyword in COUNT_NAME_KEYWORDS):
+        return True
+    # A trailing 数 usually marks a count ("孩子数", "兄弟姐妹数"), except where
+    # it closes a scoring word ("分数", "度数").
+    return name.endswith("数") and not name.endswith(("分数", "度数"))
+
+
+def is_scale_candidate(series: pd.Series, column_name: str | None = None) -> bool:
+    """Flag a numeric column that *might* be a 0-10 style scale.
+
+    This is a hint, never a verdict: the question type is untouched and the
+    column stays a numeric question. The detector deliberately does not widen
+    its own range check, because a count of children on 0-4 and a five-point
+    item on 0-4 are identical in their values — see
+    docs/detection-benchmark.md. Widening to catch the scale catches every
+    count with it.
+
+    The asymmetry is what settles it. A scale read as numeric only loses
+    information; the mean stays a legitimate statistic. A count read as a scale
+    propagates into the report and AI layers, where "3.2 purchases on average"
+    is narrated as "an average rating of 3.2" — confidently wrong, and the
+    hardest kind of error for a reader to catch.
+
+    So the ambiguity is surfaced instead of guessed at, and the person who
+    knows the answer decides. Same philosophy as the declared/detected
+    authority chain: never silently side with one reading.
+    """
+    if _is_metadata_column(column_name):
+        return False
+    values = _coerce_numeric_like_values(series.dropna()).dropna()
+    if values.empty:
+        return False
+    # Already recognised as a scale: nothing to offer.
+    if _is_scale_question(series):
+        return False
+    if _column_name_suggests_count(column_name):
+        return False
+
+    integer_ratio = ((values - values.round()).abs() < 1e-9).mean()
+    if integer_ratio < 0.99:
+        return False
+
+    minimum, maximum = values.min(), values.max()
+    if not (0 <= minimum and maximum <= 10):
+        return False
+
+    # Contiguous: a rating scale uses its whole range, a sparse set of integers
+    # is something else.
+    observed = set(int(value) for value in values.unique())
+    expected = set(range(int(minimum), int(maximum) + 1))
+    if observed != expected:
+        return False
+
+    return len(expected) >= 3
+
+
+def detect_scale_candidates(df: pd.DataFrame) -> dict[str, bool]:
+    """Per-column scale hints for the whole frame. Types are unaffected."""
+    return {
+        column: is_scale_candidate(df[column], column_name=column)
+        for column in df.columns
+    }
+
+
 def detect_question_type(
     series: pd.Series,
     multi_choice_threshold: float = 0.15,

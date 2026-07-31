@@ -137,20 +137,35 @@
 numeric question」。实测 4 点与 6 点**能被正确识别**为量表题；
 真正的缺口是 0 起量表与二值量表。该文案在向用户陈述一件不存在的事，须改。
 
-**决定**：`ScaleSpec` 增加 `min_value`，把「点数」与「取值范围」分开表示；
-分档重定为 `{5,7,10}` 通过、`{3,4,6}` warning（删去不成立的代价陈述）、
-`points=2` warning、**0 起量表 warning 而非 error**、`<2 或 >11` 才 error。
-检测器的两处放宽单独作为一项修复。
+**已实施**：`ScaleSpec` 增加 `min_value`，把「点数」与「取值范围」分开表示。
+分档重定：`points < 2 或 > 11` 才 error；`{4,6}` forced-choice warning
+（**删去了那句不成立的代价陈述**，改为说明分辨率取舍）；`{2,3}` coarse warning；
+其余通过。**0 起量表另立 `likert_points_zero_based` warning**，文案说明
+「这是通行做法，无需修改；请把 schema 与数据一并保留」。
+
+**检测器侧的放宽已否决，两件事就此解耦。** 实测显示放宽会让计数变量误判率
+从 20% 升到 100%（见 `docs/detection-benchmark.md`），而误判方向的代价是不对称的。
+检测器改为提供 `scale_candidate` 旁路提示，题型判定不变。
+**校验器的这项修复不依赖检测器做任何改动。**
 
 ### 4.2 ❌ `attention_check_present` × 1 —— 类别错误
 
 CFPS 采用 **CAPI 面访**，访员在场。注意力检测题是**自填式网络问卷**的约定，
 对访员施测工具强制要求它，是把一种施测方式的规范套到另一种上。
 
-**决定**：`Survey` 增加 `administration_mode`，并将其设计为**多条规则的通用
-前置条件**，而不是只给这一条开后门。首批挂靠：注意力检测题（仅自填式要求）、
-题干长度上限（面访可放宽）、矩阵题行数（面访有卡片辅助）、
-「不知道/拒答」选项（面访为惯例）。
+**已实施**：`Survey.administration_mode` + `schema.MODE_POLICY` 一张表，
+被每条模式相关规则读取，而不是给单条规则开后门。当前挂靠四项参数：
+
+| 参数 | 自填式 | 访员施测 |
+| --- | --- | --- |
+| `requires_attention_check` | True | **False** |
+| `max_stem_chars_zh` / `max_stem_words_en` | 40 / 25 | **60 / 40** |
+| `matrix_rows_warn` / `matrix_rows_error` | 8 / 12 | **12 / 16** |
+| `expects_dont_know_option` | False | True（**预留，暂无规则读取**） |
+
+以后新增模式相关规则只需加一个键，不需要再改规则结构。
+副作用：本问卷 11 题的矩阵在访员施测下不再触发 `matrix_rows_limit`
+（有卡片辅助，阈值提到 12），这是预期内的。
 
 ### 4.3 ❌ `likert_intensity_mirror` × 6 —— 词表不全
 
@@ -194,7 +209,8 @@ CFPS 采用 **CAPI 面访**，访员在场。注意力检测题是**自填式网
 单语工具必然全量触发（51 题 + 7 章节 + 1 标题）。它占全部触发的一半以上，
 **会把校验器的信噪比冲垮**。强制双语是我们的产品决定，不是方法学要求。
 
-**决定**：`Survey` 增加 `languages: list`，只对声明的语言做检查。
+**已实施**：`Survey.languages: list`，`bilingual_completeness` 只检查声明的语言。
+本问卷声明单语后，59 条全部消失。
 
 ### 4.8 ✅ `likert_points_forced_choice` × 19 —— 规则正确
 
@@ -212,12 +228,32 @@ CFPS 的尽责性组与社会态度组确实全部采用 4 点量表
 值得记录的是：尽责性电池因含 3 道反向题而**正确地未触发**
 `reverse_coded_per_construct`——规则具备区分力，不是无差别报警。
 
-## 5. 结论
+## 5. 修复后的结果
 
-1. **9 条 error 全部是误报。** 按事前判据，`likert_points_invalid` 与
-   `attention_check_present` **必须在写模板生成器之前修**，否则模板会被扭曲成
-   「回避 0-10 量表」且「给面访场景硬塞注意力检测题」。
-2. warning 侧 4 类误报均为词表、作用域或计数口径问题，修复成本低。
+| | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 结构骨架（提交的 fixture） | 92 条 / **9 error** | **31 条 / 0 error** |
+| 完整转写（本地） | 104 条 / **9 error** | **43 条 / 0 error** |
+
+**一份专业设计的问卷现在不触发任何 error。** error 是唯一会挡住导出的东西，
+所以这正是事前判据要求的结果。剩下的全部是 warning：
+
+| rule_id | 次数 | 性质 |
+| --- | ---: | --- |
+| `likert_points_forced_choice` | 19 | ✅ 真实，且是正当设计的说明 |
+| `likert_points_zero_based` | 8 | ⚪ 提示性，提醒保留 schema |
+| `reverse_coded_per_construct` | 3 | ✅ 真实 |
+| `option_count_too_many` | 1 | ❌ 待修（`Option.residual`） |
+| `likert_intensity_mirror` | 6 | ❌ 待修（补 `不太`） |
+| `absolute_wording` | 5 | ❌ 待修（限定作用域） |
+| `likert_endpoint_polarity` | 1 | ❌ 待修（补 `不好`） |
+
+## 6. 结论
+
+1. **9 条 error 全部是误报，现已全部消除**，且消除方式都是补充 schema 表达能力
+   （`min_value`、`administration_mode`、`languages`），**没有一条是靠降低严重度
+   蒙混过去的**。
+2. 余下 4 类 warning 误报为词表、作用域与计数口径问题，属下一批。
 3. **最有价值的正面结果**：最令人担心精确率的三条语义规则
    （双筒问题、引导性问题、专业术语）在 51 道专业撰写的题目上**误报为 0**。
    这是自建 fixture 无法提供的证据。

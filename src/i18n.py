@@ -494,15 +494,16 @@ VALIDATOR_RULE_TRANSLATIONS = {
         "en": {
             "message": "{qid} uses a {points}-point scale with no midpoint.",
             "suggestion": (
-                "A forced-choice scale is a legitimate design against midpoint and acquiescence bias. "
-                "Cost: without the schema attached, the upload path reads it as a numeric question."
+                "A forced-choice scale is a legitimate design against midpoint and acquiescence "
+                "bias. The trade-off is resolution: respondents with a genuinely neutral view "
+                "have to pick a side."
             ),
         },
         "zh-CN": {
             "message": "{qid} 使用 {points} 点量表（无中点）。",
             "suggestion": (
                 "强迫选择是对抗中庸倾向与默许偏差的正当设计。"
-                "代价：不带 schema 上传时，分析端会把它识别为数值题。"
+                "代价在分辨率：真正持中立态度的受访者被迫选边。"
             ),
         },
     },
@@ -524,6 +525,25 @@ VALIDATOR_RULE_TRANSLATIONS = {
         "zh-CN": {
             "message": "{qid} 声明的量表点数不可用：{points}。",
             "suggestion": "李克特题的点数至少为 2、至多为 10。",
+        },
+    },
+    "likert_points_zero_based": {
+        "en": {
+            "message": "{qid} is coded {low}-{high}, starting at zero.",
+            "suggestion": (
+                "Zero-based scales such as 0-10 are standard practice and nothing needs changing "
+                "here. Keep the schema with the exported data: a recovered CSV on its own reads "
+                "this as a numeric column, because 0-10 ratings and 0-10 counts are "
+                "indistinguishable by value alone."
+            ),
+        },
+        "zh-CN": {
+            "message": "{qid} 的编码为 {low}-{high}，从 0 起。",
+            "suggestion": (
+                "0 起量表（如 0-10）是通行做法，本身无需修改。"
+                "请把 schema 与导出数据一并保留：单看回收的 CSV 会把它读成数值列，"
+                "因为 0-10 的评分与 0-10 的计数在取值上无法区分。"
+            ),
         },
     },
     "likert_label_count": {

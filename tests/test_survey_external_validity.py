@@ -54,20 +54,25 @@ wording_only = pytest.mark.skipif(
 
 # ---- structural findings, guarded by the committed fixture -------------------
 EXPECTED_STRUCTURE = {
-    # false positive: 0-10 scales (NPS, satisfaction ladders, trust batteries)
-    "likert_points_invalid": 8,
-    # false positive for interviewer-administered instruments
-    "attention_check_present": 1,
-    # artifact of our bilingual product requirement, not a methodology defect
-    "bilingual_completeness": 59,
-    # true positive: the instrument really does use 4-point forced choice
+    # true positive: the instrument really does use 4-point forced choice, and
+    # the copy now comments on the resolution trade-off instead of repeating a
+    # claim about the detector that turned out to be false
     "likert_points_forced_choice": 19,
+    # informational: 0-10 batteries are standard. Was 8 errors before
+    # ScaleSpec.min_value existed; now it just reminds the author to keep the
+    # schema with the data, because 0-10 ratings and 0-10 counts are
+    # indistinguishable by value alone
+    "likert_points_zero_based": 8,
     # true positive: three batteries carry no reverse-keyed item
     "reverse_coded_per_construct": 3,
-    # true positive: an 11-item grid does invite straight-lining
-    "matrix_rows_limit": 1,
-    # false positive: residual codes (other / not applicable) inflate the count
+    # still a false positive: residual codes inflate the count. Fix pending
+    # (Option.residual)
     "option_count_too_many": 1,
+    # Gone since the previous run, all deliberately:
+    #   likert_points_invalid   8 -> 0  0-10 is a valid design, not a defect
+    #   attention_check_present 1 -> 0  interviewer mode does not require one
+    #   bilingual_completeness 59 -> 0  the instrument declares one language
+    #   matrix_rows_limit       1 -> 0  showcards raise the threshold to 12
 }
 
 # ---- wording-dependent findings, only visible with the local fixture ---------
@@ -79,6 +84,9 @@ EXPECTED_WORDING_EXTRA = {
     # false positive: 不好 is missing from the negative-polarity list
     "likert_endpoint_polarity": 1,
 }
+
+# Every one of these is a pending fix, tracked in docs/external-validity-check.md.
+# None of them is an error, so none can block an export.
 
 # Rules a professional instrument must not trip. Zero hits across 51 real items
 # is the strongest precision evidence available for the wording rules.
@@ -141,6 +149,9 @@ def test_structure_preserves_the_scale_shapes_that_drive_the_findings():
         q.scale_spec.points for q in survey.all_questions() if q.scale_spec
     )
     assert points[11] == 8, "the 0-10 batteries must survive the strip"
+    zero_based = [q for q in survey.all_questions()
+                  if q.scale_spec and q.scale_spec.is_zero_based]
+    assert len(zero_based) == 8, "min_value must survive too, not just points"
     assert points[4] == 19, "the 4-point forced-choice blocks must survive the strip"
     assert points[5] == 12, "6 job-satisfaction + 4 life-satisfaction + 2 healthcare items"
 
@@ -159,10 +170,18 @@ def test_structural_counts_have_not_drifted(structure_counts):
     )
 
 
-def test_structural_errors_are_the_two_known_false_positives(structure_counts):
-    """These are the findings that would block a real questionnaire's export."""
-    assert structure_counts["likert_points_invalid"] == 8
-    assert structure_counts["attention_check_present"] == 1
+def test_a_real_instrument_now_raises_no_errors_at_all(structure_counts):
+    """The point of the whole exercise.
+
+    A professionally designed questionnaire used to trip nine errors, every one
+    of them a false positive, and errors are what would block an export. After
+    ScaleSpec.min_value, the administration-mode policy and the declared
+    languages, it trips none. What remains are warnings: two true findings, one
+    design comment, one informational note and one pending fix.
+    """
+    assert structure_counts["likert_points_invalid"] == 0
+    assert structure_counts["attention_check_present"] == 0
+    assert structure_counts["bilingual_completeness"] == 0
 
 
 # ---- local-only fixture ------------------------------------------------------
@@ -191,11 +210,6 @@ def test_wording_counts_have_not_drifted(wording_issues):
 
 
 @wording_only
-def test_all_errors_on_a_real_instrument_are_false_positives(wording_issues):
-    found = errors(wording_issues)
-    assert len(found) == 9
-    assert {issue.rule_id for issue in found} == {
-        "likert_points_invalid",
-        "attention_check_present",
-    }
-    assert all(issue.severity == SEVERITY_ERROR for issue in found)
+def test_no_errors_survive_on_the_full_transcription_either(wording_issues):
+    assert errors(wording_issues) == []
+    assert all(issue.severity != SEVERITY_ERROR for issue in wording_issues)

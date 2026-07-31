@@ -5,6 +5,11 @@
     "en": "Product service experience survey"
   },
   "primary_language": "zh-CN",
+  "languages": [
+    "zh-CN",
+    "en"
+  ],
+  "administration_mode": "self_administered",
   "description": {
     "zh-CN": "本问卷用于了解您对本产品服务的真实感受。",
     "en": "This questionnaire explores how you experience the product's service."
@@ -124,6 +129,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -183,6 +189,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -242,6 +249,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -301,6 +309,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -372,6 +381,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -431,6 +441,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
@@ -490,6 +501,7 @@
           "options": [],
           "scale_spec": {
             "points": 5,
+            "min_value": 1,
             "polarity": "bipolar",
             "min_label": {
               "zh-CN": "非常不同意",
