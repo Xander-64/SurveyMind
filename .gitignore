@@ -6,3 +6,7 @@ __pycache__/
 data/dirty_survey_debug.csv
 uploads_tmp/
 .pytest_cache/
+# Third-party questionnaire prose, kept local only. The committed companion
+# tests/fixtures/surveys/external_structure.json carries the structure with the
+# original wording removed. See docs/external-validity-check.md.
+tests/fixtures/surveys/external_wording.json

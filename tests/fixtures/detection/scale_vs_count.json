@@ -1,0 +1,195 @@
+{
+  "_doc": [
+    "Scale versus count: the two directions the detector can get wrong.",
+    "",
+    "A 0-4 count of children and a 0-4 five-point item have identical value",
+    "distributions, so values alone cannot separate them. This fixture holds",
+    "both directions so each change has to state what it moved.",
+    "",
+    "`expected` is current behaviour. The scale rows still marked `numeric` are",
+    "the zero-based ones: the detector deliberately does not guess at them, and",
+    "surfaces a scale_candidate hint instead (see is_scale_candidate).",
+    "",
+    "Data is generated deterministically from (low, high, seed); 300 rows.",
+    "",
+    "The `ambiguous` group is the point of the whole exercise: those columns are",
+    "undecidable from values alone. No detector setting can resolve them."
+  ],
+  "rows": 300,
+  "scales": [
+    {
+      "name": "满意度",
+      "low": 1,
+      "high": 5,
+      "seed": 0,
+      "expected": "scale question"
+    },
+    {
+      "name": "信任度",
+      "low": 0,
+      "high": 10,
+      "seed": 1,
+      "expected": "numeric question",
+      "defect": "0-based scale not recognised"
+    },
+    {
+      "name": "同意程度",
+      "low": 1,
+      "high": 7,
+      "seed": 2,
+      "expected": "scale question"
+    },
+    {
+      "name": "幸福感评分",
+      "low": 0,
+      "high": 10,
+      "seed": 3,
+      "expected": "numeric question",
+      "defect": "0-based scale not recognised"
+    },
+    {
+      "name": "rating",
+      "low": 1,
+      "high": 5,
+      "seed": 4,
+      "expected": "scale question"
+    },
+    {
+      "name": "agreement",
+      "low": 1,
+      "high": 4,
+      "seed": 5,
+      "expected": "scale question"
+    },
+    {
+      "name": "认可度",
+      "low": 1,
+      "high": 6,
+      "seed": 6,
+      "expected": "scale question"
+    },
+    {
+      "name": "life_satisfaction",
+      "low": 0,
+      "high": 10,
+      "seed": 7,
+      "expected": "numeric question",
+      "defect": "0-based scale not recognised"
+    },
+    {
+      "name": "推荐意愿",
+      "low": 0,
+      "high": 10,
+      "seed": 8,
+      "expected": "numeric question",
+      "defect": "NPS, the most common 0-10 scale there is"
+    },
+    {
+      "name": "服务评价",
+      "low": 1,
+      "high": 5,
+      "seed": 9,
+      "expected": "scale question"
+    }
+  ],
+  "counts": [
+    {
+      "name": "孩子数",
+      "low": 0,
+      "high": 4,
+      "seed": 100,
+      "expected": "numeric question"
+    },
+    {
+      "name": "网购次数",
+      "low": 0,
+      "high": 10,
+      "seed": 101,
+      "expected": "numeric question"
+    },
+    {
+      "name": "请假天数",
+      "low": 0,
+      "high": 6,
+      "seed": 102,
+      "expected": "numeric question"
+    },
+    {
+      "name": "就诊次数",
+      "low": 0,
+      "high": 3,
+      "seed": 103,
+      "expected": "numeric question"
+    },
+    {
+      "name": "家庭人口数",
+      "low": 1,
+      "high": 8,
+      "seed": 104,
+      "expected": "numeric question",
+      "fixed_by": "name demotion: range sat inside a Likert window, name says count"
+    },
+    {
+      "name": "兄弟姐妹数",
+      "low": 0,
+      "high": 5,
+      "seed": 105,
+      "expected": "numeric question"
+    },
+    {
+      "name": "purchase_times",
+      "low": 0,
+      "high": 10,
+      "seed": 106,
+      "expected": "numeric question"
+    },
+    {
+      "name": "num_children",
+      "low": 0,
+      "high": 4,
+      "seed": 107,
+      "expected": "numeric question"
+    },
+    {
+      "name": "房间数量",
+      "low": 1,
+      "high": 6,
+      "seed": 108,
+      "expected": "numeric question",
+      "fixed_by": "name demotion: range sat inside a Likert window, name says count"
+    },
+    {
+      "name": "visit_count",
+      "low": 0,
+      "high": 10,
+      "seed": 109,
+      "expected": "numeric question"
+    }
+  ],
+  "ambiguous": [
+    {
+      "name": "Q12",
+      "low": 0,
+      "high": 4,
+      "seed": 200,
+      "expected": "numeric question",
+      "why": "Could be a 5-point scale or a count of children. Values are identical; the name carries no signal. Undecidable without a schema."
+    },
+    {
+      "name": "item_3",
+      "low": 0,
+      "high": 10,
+      "seed": 201,
+      "expected": "numeric question",
+      "why": "Could be NPS or a count of purchases. Undecidable without a schema."
+    },
+    {
+      "name": "v7",
+      "low": 1,
+      "high": 5,
+      "seed": 202,
+      "expected": "scale question",
+      "why": "Currently read as a scale, but could equally be a count of rooms. The verdict here is a coin flip that happens to land on scale."
+    }
+  ]
+}

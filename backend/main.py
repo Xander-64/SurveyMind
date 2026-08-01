@@ -16,6 +16,7 @@ import shutil
 import time
 import uuid
 from contextlib import asynccontextmanager, suppress
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -32,12 +33,28 @@ try:
 except ImportError:
     pass
 
+from src.ai_report import AI_STATUS_NOT_CONFIGURED, AI_STATUS_OK, generate_ai_report
+from src.analysis_suggestions import generate_analysis_suggestions
+from src.chart_recommender import recommend_charts
 from src.cross_analysis import analyze_cross_relationship
 from src.data_loader import get_dataset_overview, load_uploaded_dataset
+from src.dataset_mode import (
+    DATASET_MODE_MIXED,
+    DATASET_MODE_OPTIONS,
+    DATASET_MODE_SURVEY,
+    detect_dataset_mode,
+)
 from src.descriptive_analysis import generate_descriptive_results
+from src.field_semantics import (
+    FIELD_ROLE_NUMERIC,
+    apply_role_overrides,
+    detect_field_semantics,
+    get_field_role_options,
+)
+from src.general_overview import build_overview_findings, generate_general_overview
 from src.i18n import translate_question_type
 from src.llm_client import LLMNotConfiguredError, ask_llm, is_llm_configured
-from src.preprocessing import preprocess_input_dataframe
+from src.preprocessing import is_metadata_column, soft_clean_dataframe
 from src.question_type_detector import (
     QUESTION_TYPE_EMPTY,
     QUESTION_TYPE_MULTIPLE,
@@ -46,8 +63,15 @@ from src.question_type_detector import (
     QUESTION_TYPE_SCALE,
     QUESTION_TYPE_SINGLE,
     detect_question_types,
+    detect_scale_candidates,
+    detection_basis,
 )
-from src.report_generator import build_dataset_summary, build_llm_prompt, generate_markdown_report
+from src.report import (
+    build_dataset_summary,
+    build_llm_prompt,
+    generate_markdown_report,
+    generate_report,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SESSIONS_DIR = PROJECT_ROOT / "uploads_tmp"
@@ -169,19 +193,57 @@ def _write_meta(session_id: str, meta: dict) -> None:
     )
 
 
+def _store_meta(session_id: str, meta: dict) -> None:
+    """Persist meta and refresh the cache entry without touching the stored df."""
+    _write_meta(session_id, meta)
+    cached = _session_cache.get(session_id)
+    if cached is not None:
+        _session_cache[session_id] = (cached[0], meta)
+
+
+# Legacy strict-cleaning error, kept byte-identical for the upload endpoints.
+NO_SURVEY_COLUMNS_ERROR = "No usable survey columns remain after preprocessing."
+
+
+def _clean_for_storage(loaded: pd.DataFrame) -> pd.DataFrame:
+    """Soft-clean an upload for session storage (metadata columns kept for the
+    general platform), preserving the strict cleaner's error contract: a file
+    with no survey columns is still rejected with the legacy message."""
+    try:
+        df = soft_clean_dataframe(loaded)
+    except ValueError:
+        raise ValueError(NO_SURVEY_COLUMNS_ERROR)
+    if all(is_metadata_column(column) for column in df.columns):
+        raise ValueError(NO_SURVEY_COLUMNS_ERROR)
+    return df
+
+
 def _save_session(df: pd.DataFrame, filename: str) -> tuple[str, dict]:
+    """Store the soft-cleaned (full) df; question_types stays the five-screen
+    contract by detecting on the metadata-free view (byte-identical to the old
+    strict-cleaning pipeline)."""
     session_id = uuid.uuid4().hex
     session_dir = SESSIONS_DIR / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
 
     df.to_parquet(session_dir / "data.parquet")
-    detected = detect_question_types(df)
+    metadata_columns = [column for column in df.columns if is_metadata_column(column)]
+    detected = detect_question_types(df.drop(columns=metadata_columns))
+    semantics = detect_field_semantics(df)
+    detected_roles = {column: profile.role for column, profile in semantics.items()}
+    mode_detection = asdict(detect_dataset_mode(df, semantics))
     meta = {
         "filename": filename,
         "created_at": time.time(),
         "question_types": detected,
         # kept immutable so manual overrides can be reset to this baseline
         "detected_types": dict(detected),
+        "metadata_columns": metadata_columns,
+        "dataset_mode": mode_detection["mode"],
+        "mode_detection": mode_detection,
+        "field_roles": dict(detected_roles),
+        # kept immutable so role overrides can be reset to this baseline
+        "detected_roles": detected_roles,
     }
     _write_meta(session_id, meta)
     _session_cache[session_id] = (df, meta)
@@ -189,7 +251,8 @@ def _save_session(df: pd.DataFrame, filename: str) -> tuple[str, dict]:
     return session_id, meta
 
 
-def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
+def _load_session_full(session_id: str) -> tuple[pd.DataFrame, dict]:
+    """Load the stored df with every column, for the general-platform endpoints."""
     if session_id in _session_cache:
         df, meta = _session_cache[session_id]
         if float(meta.get("created_at", 0)) + SESSION_MAX_AGE_SECONDS <= time.time():
@@ -213,9 +276,37 @@ def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
     return df, meta
 
 
+def _survey_view(df: pd.DataFrame, meta: dict) -> pd.DataFrame:
+    metadata_columns = [column for column in meta.get("metadata_columns", ()) if column in df.columns]
+    return df.drop(columns=metadata_columns) if metadata_columns else df
+
+
+def _load_session(session_id: str) -> tuple[pd.DataFrame, dict]:
+    """Load the survey view (metadata columns dropped) — identical to what the
+    strict cleaner used to store, so every legacy endpoint behaves unchanged."""
+    df, meta = _load_session_full(session_id)
+    return _survey_view(df, meta), meta
+
+
 def df_records(df: pd.DataFrame) -> list[dict]:
     """DataFrame -> JSON-safe list of records (NaN -> null, numpy -> native)."""
     return json.loads(df.to_json(orient="records", force_ascii=False))
+
+
+def _numeric_histograms(df: pd.DataFrame, columns: list[str]) -> dict[str, dict]:
+    """Bin counts for the frontend's histogram bars (8 bins matches the design
+    mockup). Pure numpy on already-numeric columns — no new analysis."""
+    histograms: dict[str, dict] = {}
+    for column in columns:
+        values = pd.to_numeric(df[column], errors="coerce").dropna()
+        if len(values) >= 2 and values.nunique() > 1:
+            counts, edges = np.histogram(values, bins=8)
+            histograms[column] = {
+                "counts": counts.tolist(),
+                "min": float(edges[0]),
+                "max": float(edges[-1]),
+            }
+    return histograms
 
 
 @app.get("/health")
@@ -232,7 +323,7 @@ async def upload(file: UploadFile = File(...)):
 
     try:
         # Identical pipeline to the Streamlit app: tolerant load + shared cleaning.
-        df = preprocess_input_dataframe(load_uploaded_dataset(file_bytes, file.filename or ""))
+        df = _clean_for_storage(load_uploaded_dataset(file_bytes, file.filename or ""))
     except pd.errors.EmptyDataError:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
     except ValueError as exc:
@@ -240,12 +331,14 @@ async def upload(file: UploadFile = File(...)):
     except Exception:
         raise HTTPException(status_code=400, detail="The file appears to be corrupted or unreadable.")
 
-    session_id, _ = _save_session(df, file.filename or "uploaded")
+    session_id, meta = _save_session(df, file.filename or "uploaded")
     return {
         "session_id": session_id,
         "filename": file.filename,
         "rows": int(len(df)),
-        "columns": int(df.shape[1]),
+        # survey-view count: byte-identical to the strict-cleaning era
+        "columns": int(df.shape[1] - len(meta["metadata_columns"])),
+        "mode": meta["dataset_mode"],
     }
 
 
@@ -255,13 +348,14 @@ async def demo_session():
     demo_path = PROJECT_ROOT / "data" / "sample_survey.csv"
     if not demo_path.exists():
         raise HTTPException(status_code=404, detail="Demo dataset not found.")
-    df = preprocess_input_dataframe(load_uploaded_dataset(demo_path.read_bytes(), demo_path.name))
-    session_id, _ = _save_session(df, demo_path.name)
+    df = _clean_for_storage(load_uploaded_dataset(demo_path.read_bytes(), demo_path.name))
+    session_id, meta = _save_session(df, demo_path.name)
     return {
         "session_id": session_id,
         "filename": demo_path.name,
         "rows": int(len(df)),
-        "columns": int(df.shape[1]),
+        "columns": int(df.shape[1] - len(meta["metadata_columns"])),
+        "mode": meta["dataset_mode"],
     }
 
 
@@ -281,7 +375,18 @@ def overview(session_id: str):
     }
 
 
-def _detect_payload(meta: dict) -> dict:
+def _detect_payload(meta: dict, df: pd.DataFrame | None = None) -> dict:
+    """Question types, plus a per-column scale hint.
+
+    ``scale_candidate`` marks a numeric column that could be a 0-10 style scale
+    the detector will not claim on its own. It never changes the type: a count
+    of purchases and an NPS rating are identical in their values, so guessing
+    risks narrating "3.2 purchases" as "a 3.2 rating" in the report. The hint
+    surfaces the ambiguity for the one person who knows the answer, who
+    resolves it through the existing POST /types override.
+    """
+    candidates = detect_scale_candidates(df) if df is not None else {}
+    detected = meta.get("detected_types") or {}
     counts: dict[str, int] = {}
     types = []
     for column, q_type in meta["question_types"].items():
@@ -293,6 +398,21 @@ def _detect_payload(meta: dict) -> dict:
                 "type": q_type,
                 "short": short,
                 "type_zh": translate_question_type("zh-CN", q_type),
+                # Only offer the hint where it means something: a column the
+                # active type still calls numeric. Once it has been overridden
+                # the question is settled and repeating the hint is noise.
+                "scale_candidate": bool(candidates.get(column, False))
+                and q_type == QUESTION_TYPE_NUMERIC,
+                # What the verdict rests on — values, name, or a conflict —
+                # rather than a probability the verdict is correct.
+                "basis": (
+                    detection_basis(
+                        df[column], column_name=column,
+                        active_type=q_type, detected_type=detected.get(column),
+                    )
+                    if df is not None and column in df.columns
+                    else {"level": "medium", "code": "values_only"}
+                ),
             }
         )
     return {"types": types, "counts": counts}
@@ -300,8 +420,8 @@ def _detect_payload(meta: dict) -> dict:
 
 @app.get("/api/{session_id}/detect")
 def detect(session_id: str):
-    _, meta = _load_session(session_id)
-    return _detect_payload(meta)
+    df, meta = _load_session(session_id)
+    return _detect_payload(meta, df)
 
 
 @app.post("/api/{session_id}/types")
@@ -317,9 +437,8 @@ def override_type(session_id: str, body: dict):
         raise HTTPException(status_code=400, detail=f"Unknown question type: {short}")
 
     meta["question_types"][column] = full_type
-    _write_meta(session_id, meta)
-    _session_cache[session_id] = (df, meta)
-    return _detect_payload(meta)
+    _store_meta(session_id, meta)
+    return _detect_payload(meta, df)
 
 
 @app.delete("/api/{session_id}/types")
@@ -327,9 +446,8 @@ def reset_types(session_id: str):
     """Discard manual overrides, restoring the original auto-detected types."""
     df, meta = _load_session(session_id)
     meta["question_types"] = dict(meta.get("detected_types") or meta["question_types"])
-    _write_meta(session_id, meta)
-    _session_cache[session_id] = (df, meta)
-    return _detect_payload(meta)
+    _store_meta(session_id, meta)
+    return _detect_payload(meta, df)
 
 
 @app.get("/api/{session_id}/stats")
@@ -347,19 +465,9 @@ def stats(session_id: str, open_text_limit: int = 200):
             answers = df[column].dropna().astype(str).tolist()
             open_text[column] = {"total": len(answers), "answers": answers[:open_text_limit]}
 
-    # Bin counts for the frontend's numeric histogram bars (8 bins matches the
-    # design mockup). Pure numpy on already-numeric columns — no new analysis.
-    numeric_histograms = {}
-    for column, q_type in question_types.items():
-        if q_type == QUESTION_TYPE_NUMERIC:
-            values = pd.to_numeric(df[column], errors="coerce").dropna()
-            if len(values) >= 2 and values.nunique() > 1:
-                counts, edges = np.histogram(values, bins=8)
-                numeric_histograms[column] = {
-                    "counts": counts.tolist(),
-                    "min": float(edges[0]),
-                    "max": float(edges[-1]),
-                }
+    numeric_histograms = _numeric_histograms(
+        df, [column for column, q_type in question_types.items() if q_type == QUESTION_TYPE_NUMERIC]
+    )
 
     return {
         "numeric_summary": df_records(numeric_summary.reset_index(names="column")) if not numeric_summary.empty else [],
@@ -410,16 +518,48 @@ def report(
     group_col: str | None = None,
     target_col: str | None = None,
     download: bool = False,
+    mode: str | None = None,
 ):
-    df, meta = _load_session(session_id)
-    question_types = meta["question_types"]
-    results = generate_descriptive_results(df, question_types)
+    if mode is not None and mode not in DATASET_MODE_OPTIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown dataset mode: {mode}")
 
-    cross_result = None
-    if group_col and target_col and group_col in df.columns and target_col in df.columns:
-        cross_result = analyze_cross_relationship(df, group_col, target_col, question_types, language=language)
+    if mode is None or mode == DATASET_MODE_SURVEY:
+        # Legacy path — the five-screen export contract, byte-identical.
+        df, meta = _load_session(session_id)
+        question_types = meta["question_types"]
+        results = generate_descriptive_results(df, question_types)
 
-    markdown = generate_markdown_report(df, question_types, results, cross_result, language)
+        cross_result = None
+        if group_col and target_col and group_col in df.columns and target_col in df.columns:
+            cross_result = analyze_cross_relationship(df, group_col, target_col, question_types, language=language)
+
+        markdown = generate_markdown_report(df, question_types, results, cross_result, language)
+    else:
+        # general / mixed: full df + active field roles drive the mode report.
+        df, meta = _load_session_full(session_id)
+        meta = _ensure_platform_meta(session_id, df, meta)
+        semantics = _active_semantics(df, meta)
+        overview = generate_general_overview(df, semantics)
+        question_types = meta["question_types"]
+        descriptive_results = (
+            generate_descriptive_results(df, question_types) if mode == DATASET_MODE_MIXED else None
+        )
+
+        cross_result = None
+        if group_col and target_col and group_col in question_types and target_col in question_types:
+            cross_result = analyze_cross_relationship(df, group_col, target_col, question_types, language=language)
+
+        markdown = generate_report(
+            df,
+            mode,
+            language,
+            question_types=question_types,
+            descriptive_results=descriptive_results,
+            cross_analysis_result=cross_result,
+            semantics=semantics,
+            overview=overview,
+        )
+
     if download:
         return PlainTextResponse(
             markdown,
@@ -430,19 +570,193 @@ def report(
 
 
 @app.post("/api/{session_id}/ai-report")
-def ai_report(session_id: str):
-    """LLM interpretation of the dataset. Reuses the existing structured-summary
-    prompt builders; degrades gracefully when no API key is configured."""
-    df, _ = _load_session(session_id)
-    if not is_llm_configured():
-        return {"ok": False, "reason": "not_configured"}
+def ai_report(session_id: str, body: dict | None = None):
+    """LLM interpretation of the dataset. Without a body (or mode) this is the
+    legacy survey prompt, unchanged; with a mode it runs the persona-based
+    generator from src/ai_report. Degrades gracefully when no key is set."""
+    body = body or {}
+    mode = body.get("mode")
 
-    try:
-        prompt = build_llm_prompt(build_dataset_summary(df))
-        markdown = ask_llm(prompt)
-    except LLMNotConfiguredError:
+    if mode is None:
+        df, _ = _load_session(session_id)
+        if not is_llm_configured():
+            return {"ok": False, "reason": "not_configured"}
+
+        try:
+            prompt = build_llm_prompt(build_dataset_summary(df))
+            markdown = ask_llm(prompt)
+        except LLMNotConfiguredError:
+            return {"ok": False, "reason": "not_configured"}
+        except Exception as exc:
+            # str(exc) never contains the key (it travels in a request header only)
+            return {"ok": False, "reason": "api_error", "message": str(exc)[:300]}
+        return {"ok": True, "markdown": markdown}
+
+    if mode not in DATASET_MODE_OPTIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown dataset mode: {mode}")
+
+    language = body.get("language", "zh-CN")
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    semantics = _active_semantics(df, meta)
+    overview = generate_general_overview(df, semantics)
+
+    question_types = None
+    descriptive_results = None
+    if mode in {DATASET_MODE_SURVEY, DATASET_MODE_MIXED}:
+        question_types = meta["question_types"]
+        descriptive_results = generate_descriptive_results(df, question_types)
+
+    result = generate_ai_report(df, mode, language, overview, descriptive_results, question_types)
+    if result["status"] == AI_STATUS_OK:
+        return {"ok": True, "mode": mode, "markdown": result["content"]}
+    if result["status"] == AI_STATUS_NOT_CONFIGURED:
         return {"ok": False, "reason": "not_configured"}
-    except Exception as exc:
-        # str(exc) never contains the key (it travels in a request header only)
-        return {"ok": False, "reason": "api_error", "message": str(exc)[:300]}
-    return {"ok": True, "markdown": markdown}
+    return {"ok": False, "reason": "api_error"}
+
+
+# --- General data platform (mode / field roles / overview) -------------------
+
+
+def _ensure_platform_meta(session_id: str, df: pd.DataFrame, meta: dict) -> dict:
+    """Backfill sessions created before the general-platform upgrade so the new
+    endpoints work on them too (their stored df is already the strict view)."""
+    if "detected_roles" in meta and "mode_detection" in meta:
+        return meta
+
+    semantics = detect_field_semantics(df)
+    detected_roles = {column: profile.role for column, profile in semantics.items()}
+    mode_detection = asdict(detect_dataset_mode(df, semantics))
+    meta.setdefault("metadata_columns", [])
+    meta["detected_roles"] = detected_roles
+    meta.setdefault("field_roles", dict(detected_roles))
+    meta["mode_detection"] = mode_detection
+    meta.setdefault("dataset_mode", mode_detection["mode"])
+    _store_meta(session_id, meta)
+    return meta
+
+
+def _active_semantics(df: pd.DataFrame, meta: dict) -> dict:
+    """Detected field profiles with the session's manual role overrides applied."""
+    return apply_role_overrides(detect_field_semantics(df), meta.get("field_roles", {}))
+
+
+def _mode_payload(meta: dict) -> dict:
+    return {"detected": meta["mode_detection"], "active": meta["dataset_mode"]}
+
+
+def _semantics_payload(df: pd.DataFrame, meta: dict) -> dict:
+    fields = []
+    for column, profile in _active_semantics(df, meta).items():
+        data = asdict(profile)
+        fields.append(
+            {
+                "column": data["column"],
+                "role": data["role"],
+                "confidence": data["confidence"],
+                "evidence": data["evidence"],
+                "non_null": data["non_null_count"],
+                "unique": data["unique_count"],
+                "missing_pct": round(float(df[column].isna().mean() * 100), 2),
+            }
+        )
+    return {"fields": fields, "role_options": get_field_role_options()}
+
+
+@app.get("/api/{session_id}/mode")
+def get_mode(session_id: str):
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    return _mode_payload(meta)
+
+
+@app.put("/api/{session_id}/mode")
+def set_mode(session_id: str, body: dict):
+    """Manually switch the active dataset mode; detection stays as the baseline."""
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    mode = body.get("mode")
+    if mode not in DATASET_MODE_OPTIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown dataset mode: {mode}")
+
+    meta["dataset_mode"] = mode
+    _store_meta(session_id, meta)
+    return _mode_payload(meta)
+
+
+@app.get("/api/{session_id}/semantics")
+def semantics(session_id: str):
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    return _semantics_payload(df, meta)
+
+
+@app.put("/api/{session_id}/semantics")
+def override_role(session_id: str, body: dict):
+    """Manually correct one column's field role; overview and reports follow."""
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    column = body.get("column")
+    role = body.get("role")
+    if column not in df.columns:
+        raise HTTPException(status_code=400, detail=f"Column not found: {column}")
+    if role not in get_field_role_options():
+        raise HTTPException(status_code=400, detail=f"Unknown field role: {role}")
+
+    meta["field_roles"][column] = role
+    _store_meta(session_id, meta)
+    return _semantics_payload(df, meta)
+
+
+@app.delete("/api/{session_id}/semantics")
+def reset_roles(session_id: str):
+    """Discard manual role overrides, restoring the original detected roles."""
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    meta["field_roles"] = dict(meta["detected_roles"])
+    _store_meta(session_id, meta)
+    return _semantics_payload(df, meta)
+
+
+@app.get("/api/{session_id}/general-overview")
+def general_overview(session_id: str):
+    """Everything the Smart Insights screen needs in one response, with
+    natural-language findings/suggestions returned in both languages."""
+    df, meta = _load_session_full(session_id)
+    meta = _ensure_platform_meta(session_id, df, meta)
+    semantics = _active_semantics(df, meta)
+    overview = generate_general_overview(df, semantics)
+
+    quality = overview["quality"]
+    numeric_summary = overview["numeric_summary"]
+    numeric_columns = [column for column, profile in semantics.items() if profile.role == FIELD_ROLE_NUMERIC]
+    return {
+        "rows": int(df.shape[0]),
+        "columns": int(df.shape[1]),
+        "quality": {
+            "duplicate_rows": quality["duplicate_rows"],
+            "overall_missing_pct": quality["overall_missing_pct"],
+            "high_missing": [
+                {"column": str(column), "missing_pct": round(float(rate * 100), 2)}
+                for column, rate in quality["high_missing"].items()
+            ],
+            "unusable_columns": quality["unusable_columns"],
+        },
+        "numeric_summary": df_records(numeric_summary.reset_index(names="column")) if not numeric_summary.empty else [],
+        "categorical_summary": {column: df_records(freq) for column, freq in overview["categorical_summary"].items()},
+        "datetime_summary": df_records(overview["datetime_summary"]) if not overview["datetime_summary"].empty else [],
+        "time_trends": {column: df_records(trend) for column, trend in overview["time_trends"].items()},
+        "correlations": df_records(overview["correlations"]) if not overview["correlations"].empty else [],
+        "group_differences": df_records(overview["group_differences"]) if not overview["group_differences"].empty else [],
+        "id_candidates": overview["id_candidates"],
+        "findings": {
+            "zh": build_overview_findings(df, overview, "zh-CN"),
+            "en": build_overview_findings(df, overview, "en"),
+        },
+        "suggestions": {
+            "zh": generate_analysis_suggestions(df, semantics, overview, "zh-CN"),
+            "en": generate_analysis_suggestions(df, semantics, overview, "en"),
+        },
+        "chart_specs": recommend_charts(df, semantics, overview),
+        "numeric_histograms": _numeric_histograms(df, numeric_columns),
+    }

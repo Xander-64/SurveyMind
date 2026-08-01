@@ -1,0 +1,168 @@
+{
+  "_doc": [
+    "Positives for the wording rules: each stem must trigger its rule.",
+    "Design requirement is >=5 positives and >=5 negatives per wording rule.",
+    "Negatives live in hard_negatives.json; external_real.json adds 51 further",
+    "real-world negatives from a professional instrument.",
+    "",
+    "Only wording rules live here. Structural violations are built in",
+    "tests/test_survey_validator.py with make_survey, because their content is",
+    "shape rather than natural language."
+  ],
+  "cases": {
+    "double_barreled": [
+      {
+        "why": "Both items are evaluation targets; a respondent could be happy with quality and unhappy with speed.",
+        "stem": {"zh-CN": "您对本店的服务质量和配送速度是否满意？", "en": "Are you satisfied with the service quality and the delivery speed?"}
+      },
+      {
+        "why": "Appearance and after-sales support are independent attributes with no necessary correlation.",
+        "stem": {"zh-CN": "这款产品的外观和售后是否达到您的预期？", "en": "Did the design and the support meet your expectations?"}
+      },
+      {
+        "why": "Content and delivery format are separate dimensions: content can be good while the format is poor.",
+        "stem": {"zh-CN": "您认为课程的内容和方式安排合理吗？", "en": "Do you find the course content and the delivery design reasonable?"}
+      },
+      {
+        "why": "Delivery speed and packaging are handled by different parts of the operation.",
+        "stem": {"zh-CN": "您对配送速度和包装是否满意？", "en": "Are you happy with the delivery speed and the packaging?"}
+      },
+      {
+        "why": "Price and service are the classic pairing a respondent splits: cheap but rude, or costly but attentive.",
+        "stem": {"zh-CN": "本店的价格和服务让您满意吗？", "en": "Are you satisfied with the price and the service here?"}
+      }
+    ],
+    "leading_question": [
+      {
+        "why": "Presupposes the service is excellent before asking.",
+        "stem": {"zh-CN": "您对我们优秀的客服服务有多满意？", "en": "How satisfied are you with our excellent support service?"}
+      },
+      {
+        "why": "Rhetorical framing pushes the respondent toward agreement.",
+        "stem": {"zh-CN": "难道不觉得这个价格很划算吗？", "en": "Don't you agree that this price is a bargain?"}
+      },
+      {
+        "why": "Appeals to consensus so disagreement feels deviant.",
+        "stem": {"zh-CN": "众所周知本产品可靠，您同意吗？", "en": "Everyone knows this product is reliable, do you agree?"}
+      },
+      {
+        "why": "Asserts the conclusion the item is supposed to measure.",
+        "stem": {"zh-CN": "显而易见这个功能提高了效率，您认为呢？", "en": "Obviously this feature improved efficiency, what do you think?"}
+      },
+      {
+        "why": "A loaded negative adjective steers the answer downward.",
+        "stem": {"zh-CN": "您如何看待竞品糟糕的售后体验？", "en": "What do you make of the terrible after-sales experience elsewhere?"}
+      }
+    ],
+    "double_negative": [
+      {
+        "why": "Two negations in one clause invert the meaning under time pressure.",
+        "stem": {"zh-CN": "您是否不认为这个功能没有帮助？", "en": "Do you not think this feature is not helpful?"}
+      },
+      {
+        "why": "Same trap with a different negator pair.",
+        "stem": {"zh-CN": "您不会没有注意到这个变化吧？", "en": "You would not have failed to notice no change?"}
+      },
+      {
+        "why": "A negated universal plus a negated verb inside one clause.",
+        "stem": {"zh-CN": "没有人不喜欢这个设计吗？", "en": "Is there no one who does not like this design?"}
+      },
+      {
+        "why": "Negation stacked on a negated adjective.",
+        "stem": {"zh-CN": "您不觉得这个价格不合理吗？", "en": "Do you not find this price not reasonable?"}
+      },
+      {
+        "why": "English-only stacking, same failure mode.",
+        "stem": {"zh-CN": "您没有理由不推荐它吗？", "en": "Is there no reason not to recommend it?"}
+      }
+    ],
+    "absolute_wording": [
+      {
+        "why": "An absolute quantifier makes agreement almost impossible.",
+        "stem": {"zh-CN": "本产品总是能满足您的需求吗？", "en": "Does this product always meet your needs?"}
+      },
+      {
+        "why": "\"All\" lets one exception flip the answer.",
+        "stem": {"zh-CN": "所有功能都符合您的预期吗？", "en": "Do all features meet your expectations?"}
+      },
+      {
+        "why": "A never-claim is nearly unfalsifiable for a respondent.",
+        "stem": {"zh-CN": "您从不需要联系客服吗？", "en": "Do you never need to contact support?"}
+      },
+      {
+        "why": "\"Absolutely\" asserts certainty the respondent is asked to endorse.",
+        "stem": {"zh-CN": "我们的服务绝对可靠，您同意吗？", "en": "Our service is absolutely reliable, do you agree?"}
+      },
+      {
+        "why": "\"Every\" turns a frequency item into an all-or-nothing test.",
+        "stem": {"zh-CN": "您每次购物都会使用优惠券吗？", "en": "Do you use a coupon every time you shop?"}
+      }
+    ],
+    "jargon": [
+      {
+        "why": "Domain metric a general respondent will not know.",
+        "stem": {"zh-CN": "您认为本产品的复购率表现如何？", "en": "How do you rate this product's retention?"}
+      },
+      {
+        "why": "Unexplained acronym on first use.",
+        "stem": {"zh-CN": "本产品的 API 是否满足您的需要？", "en": "Does the API meet your needs?"}
+      },
+      {
+        "why": "Internal operations vocabulary leaking into a respondent-facing item.",
+        "stem": {"zh-CN": "您如何评价我们的私域运营？", "en": "How do you rate our onboarding process?"}
+      },
+      {
+        "why": "Analytics term with no everyday meaning.",
+        "stem": {"zh-CN": "您对本次活动的转化率满意吗？", "en": "Are you satisfied with the conversion rate of this campaign?"}
+      },
+      {
+        "why": "Stacked acronyms make the item unreadable.",
+        "stem": {"zh-CN": "本次 KPI 是否达成了您的预期？", "en": "Did the KPI meet your expectation?"}
+      }
+    ],
+    "question_length": [
+      {
+        "why": "Chinese stem well past the 40-character guideline.",
+        "stem": {"zh-CN": "在您过去半年使用本产品的整个过程当中，综合考虑您在使用前的期待以及使用后的实际感受，您觉得这款产品的整体表现究竟如何呢？", "en": "Overall, how did it go?"}
+      },
+      {
+        "why": "English stem past the 25-word guideline.",
+        "stem": {"zh-CN": "整体如何？", "en": "Taking into account everything you expected before you started using this product as well as what you actually experienced afterwards, how would you describe the overall performance of it?"}
+      },
+      {
+        "why": "Long preamble folded into the stem instead of a section intro.",
+        "stem": {"zh-CN": "考虑到我们在过去一年当中对配送流程所做的各项调整以及门店服务标准的更新，请您评价目前的整体购物体验是否有所改善呢？", "en": "Has it improved?"}
+      },
+      {
+        "why": "A definition embedded in the stem pushes it past the limit.",
+        "stem": {"zh-CN": "所谓售后服务是指购买之后由我方提供的退换货、维修、咨询等一系列支持，请问您对我们的售后服务是否满意呢？", "en": "Are you satisfied?"}
+      },
+      {
+        "why": "English stem that stacks three conditions before the question.",
+        "stem": {"zh-CN": "满意吗？", "en": "Considering how often you shop with us, the range of products you have bought over the last twelve months, and the delivery options you selected, how satisfied are you overall?"}
+      }
+    ],
+    "fabricated_citation": [
+      {
+        "why": "Author-year citation pattern in a generated item.",
+        "stem": {"zh-CN": "本题改编自 (Parasuraman 1988) 的服务质量测量。", "en": "This item is adapted from (Parasuraman 1988)."}
+      },
+      {
+        "why": "Claims to reproduce a named published instrument.",
+        "stem": {"zh-CN": "以下题目来自 SERVQUAL 标准量表。", "en": "The following items come from the SERVQUAL instrument."}
+      },
+      {
+        "why": "et al. signals a literature reference the generator cannot have.",
+        "stem": {"zh-CN": "本量表引自 Smith et al. 的研究。", "en": "This scale is taken from Smith et al."}
+      },
+      {
+        "why": "A DOI is a hard claim of provenance.",
+        "stem": {"zh-CN": "量表来源见 doi:10.1000/example。", "en": "See doi:10.1000/example for the source."}
+      },
+      {
+        "why": "Names a second well-known instrument.",
+        "stem": {"zh-CN": "本部分采用 UTAUT 模型的标准题项。", "en": "This section uses the standard UTAUT items."}
+      }
+    ]
+  }
+}

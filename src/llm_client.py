@@ -10,6 +10,15 @@ the project's .env file — see .env.example):
 Because DeepSeek, Kimi, Zhipu GLM and Anthropic's OpenAI-compatible layer all
 speak this format, switching providers only means editing .env — no code
 changes.
+
+Two calling styles are provided:
+
+- ``ask_llm(prompt)``: raises on failure. Used by the FastAPI backend, which
+  turns errors into explicit HTTP responses. Do not change its behavior — the
+  deployed service depends on it.
+- ``call_llm(system_prompt, user_prompt)``: returns ``None`` on any failure.
+  Used by the Streamlit AI-interpretation layer (src/ai_report.py), which
+  degrades gracefully when the LLM is unavailable.
 """
 from __future__ import annotations
 
@@ -62,3 +71,37 @@ def ask_llm(prompt: str, timeout: float = 120.0) -> str:
     if not isinstance(content, str) or not content.strip():
         raise RuntimeError("The LLM returned an empty response.")
     return content.strip()
+
+
+def call_llm(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float = 0.2,
+    timeout: float = 90.0,
+) -> str | None:
+    """System+user chat call that returns None on any failure instead of raising."""
+    config = get_llm_config()
+    if not config["api_key"]:
+        return None
+
+    try:
+        response = httpx.post(
+            config["base_url"] + "/chat/completions",
+            headers={"Authorization": "Bearer " + config["api_key"]},
+            json={
+                "model": config["model"],
+                "temperature": temperature,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        data = response.json()
+        choices = data.get("choices") or [{}]
+        content = choices[0].get("message", {}).get("content", "")
+        return content.strip() if isinstance(content, str) and content.strip() else None
+    except Exception:
+        return None

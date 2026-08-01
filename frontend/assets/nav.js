@@ -3,7 +3,7 @@
   var steps   = Array.prototype.slice.call(document.querySelectorAll('.step'));
   var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
   var main    = document.getElementById('main');
-  var order   = ['upload','overview','types','stats','cross','export'];
+  var order   = ['upload','overview','insight','types','stats','cross','export'];
 
   function setScreen(name){
     var target = document.getElementById('screen-' + name);

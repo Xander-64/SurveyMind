@@ -30,16 +30,33 @@ def is_metadata_column(column_name: str) -> bool:
     return "id" in _name_tokens(column_name)
 
 
-def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def soft_clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Lenient cleaning shared by the Streamlit platform and the API's session
+    storage: normalize column names, blank strings -> NA, drop all-empty
+    columns. Metadata (ID/timestamp) columns are kept so field-semantics
+    detection can assign identifier/datetime roles.
+    """
     cleaned_df = df.copy()
     cleaned_df.columns = [str(column).strip() if column is not None else "" for column in cleaned_df.columns]
     cleaned_df = cleaned_df.replace(r"^\s*$", pd.NA, regex=True)
+
+    cleaned_df = cleaned_df.dropna(axis=1, how="all")
+    if cleaned_df.shape[1] == 0:
+        raise ValueError("No usable data columns remain after preprocessing.")
+
+    return cleaned_df
+
+
+def preprocess_input_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        cleaned_df = soft_clean_dataframe(df)
+    except ValueError:
+        raise ValueError("No usable survey columns remain after preprocessing.")
 
     metadata_columns = [column for column in cleaned_df.columns if is_metadata_column(column)]
     if metadata_columns:
         cleaned_df = cleaned_df.drop(columns=metadata_columns, errors="ignore")
 
-    cleaned_df = cleaned_df.dropna(axis=1, how="all")
     if cleaned_df.shape[1] == 0:
         raise ValueError("No usable survey columns remain after preprocessing.")
 

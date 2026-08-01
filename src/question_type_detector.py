@@ -116,8 +116,8 @@ def _coerce_numeric_like_values(series: pd.Series) -> pd.Series:
     return numeric_values.fillna(extracted_numeric_values)
 
 
-def _is_scale_question(series: pd.Series) -> bool:
-    """Identify Likert-style numeric items such as 1-5, 1-7, or 1-10 scales."""
+def _is_scale_by_values(series: pd.Series) -> bool:
+    """The value rules alone: range, cardinality, integer ratio."""
     numeric_values = _coerce_numeric_like_values(series.dropna()).dropna()
     if numeric_values.empty:
         return False
@@ -148,6 +148,249 @@ def _is_scale_question(series: pd.Series) -> bool:
     # dtype is float because of missing values or spreadsheet imports.
     integer_ratio = ((numeric_values - numeric_values.round()).abs() < 1e-9).mean()
     return integer_ratio >= 0.8
+
+
+# Column names that read as a count rather than a rating.
+#
+# This list is used in exactly one direction: to demote a column the value
+# rules called a scale back to numeric. That direction is monotone-safe. Getting
+# it wrong turns a real scale into a numeric question, which only loses
+# information — the mean stays a legitimate statistic. The opposite direction,
+# promoting on a name, could turn a count into a scale, and a count read as a
+# scale reaches the report and AI layers, where "3.2 purchases on average"
+# becomes "an average rating of 3.2".
+#
+# The overfitting objection to this word list (see docs/detection-benchmark.md)
+# applies to the promoting direction only. Here the worst case is a safe one.
+COUNT_NAME_KEYWORDS = (
+    "次数", "个数", "数量", "人数", "人口", "天数", "频次", "件数", "笔数",
+    "count", "number", "times", "frequency", "qty", "num_", "_num",
+)
+
+def _column_name_suggests_count(column_name: str | None, include_suffix: bool = False) -> bool:
+    """Explicit keywords only by default.
+
+    ``include_suffix`` adds a looser trailing-数 rule ("孩子数", "兄弟姐妹数").
+    It is used for hint suppression, which changes nothing, and deliberately
+    not for the demotion, which changes behaviour and stays conservative.
+    """
+    name = str(column_name or "").lower()
+    if any(keyword in name for keyword in COUNT_NAME_KEYWORDS):
+        return True
+    if not include_suffix:
+        return False
+    return name.endswith("数") and not name.endswith(("分数", "度数"))
+
+
+def _name_demotes_scale(series: pd.Series, column_name: str | None = None) -> bool:
+    """True when the column name says count and does not say rating."""
+    name = column_name if column_name is not None else getattr(series, "name", None)
+    if not _column_name_suggests_count(name):
+        return False
+    named = series if column_name is None else series.rename(column_name)
+    return not _column_name_suggests_scale(named)
+
+
+def scale_demotion_reason(series: pd.Series, column_name: str | None = None) -> str | None:
+    """Why this column was kept numeric despite looking like a scale.
+
+    Returns None when no demotion applied. The reason is surfaced through
+    /detect so the user can see the call was made on the column *name*, and
+    reverse it with the ordinary manual override if the name misled us.
+    """
+    name = column_name if column_name is not None else getattr(series, "name", None)
+    if not _name_demotes_scale(series, column_name):
+        return None
+    if not _is_scale_by_values(series):
+        return None
+    matched = next(
+        (kw for kw in COUNT_NAME_KEYWORDS if kw in str(name or "").lower()), ""
+    )
+    return "count_name:%s" % matched
+
+
+def is_scale_candidate(series: pd.Series, column_name: str | None = None) -> bool:
+    """Flag a numeric column that *might* be a 0-10 style scale.
+
+    This is a hint, never a verdict: the question type is untouched and the
+    column stays a numeric question. The detector deliberately does not widen
+    its own range check, because a count of children on 0-4 and a five-point
+    item on 0-4 are identical in their values — see
+    docs/detection-benchmark.md. Widening to catch the scale catches every
+    count with it.
+
+    The asymmetry is what settles it. A scale read as numeric only loses
+    information; the mean stays a legitimate statistic. A count read as a scale
+    propagates into the report and AI layers, where "3.2 purchases on average"
+    is narrated as "an average rating of 3.2" — confidently wrong, and the
+    hardest kind of error for a reader to catch.
+
+    So the ambiguity is surfaced instead of guessed at, and the person who
+    knows the answer decides. Same philosophy as the declared/detected
+    authority chain: never silently side with one reading.
+    """
+    if _is_metadata_column(column_name):
+        return False
+    values = _coerce_numeric_like_values(series.dropna()).dropna()
+    if values.empty:
+        return False
+    # Already recognised as a scale: nothing to offer.
+    if _is_scale_question(series, column_name):
+        return False
+    if _column_name_suggests_count(column_name, include_suffix=True):
+        return False
+
+    integer_ratio = ((values - values.round()).abs() < 1e-9).mean()
+    if integer_ratio < 0.99:
+        return False
+
+    minimum, maximum = values.min(), values.max()
+    if not (0 <= minimum and maximum <= 10):
+        return False
+
+    # Contiguous: a rating scale uses its whole range, a sparse set of integers
+    # is something else.
+    observed = set(int(value) for value in values.unique())
+    expected = set(range(int(minimum), int(maximum) + 1))
+    if observed != expected:
+        return False
+
+    return len(expected) >= 3
+
+
+def detect_scale_candidates(df: pd.DataFrame) -> dict[str, bool]:
+    """Per-column scale hints for the whole frame. Types are unaffected."""
+    return {
+        column: is_scale_candidate(df[column], column_name=column)
+        for column in df.columns
+    }
+
+
+# ---- detection basis --------------------------------------------------------
+# What the verdict rests on, not how likely it is to be right.
+#
+# Every branch of detect_question_type compares against a threshold, so a margin
+# is always computable. But a margin measures how firmly the rules fired, and
+# that is not the same thing as correctness: a 1-5 column named "满意度" and one
+# named "v7" produce identical value signals, and only one of them is a
+# defensible scale. Calling the second "high confidence" would be worse than
+# saying nothing.
+#
+# So this reports the *basis* — values, name, or a conflict between them — and
+# caps it at medium whenever the values alone fit more than one reading. The
+# levels are ordinal labels for a UI, never probabilities.
+
+BASIS_HIGH = "high"
+BASIS_MEDIUM = "medium"
+BASIS_LOW = "low"
+
+BASIS_USER = "user_override"
+BASIS_VALUES_AND_NAME = "values_and_name"
+BASIS_VALUES_CLEAR = "values_clear"
+BASIS_VALUES_ONLY = "values_only"
+BASIS_NEAR_BOUNDARY = "near_boundary"
+BASIS_SCALE_CANDIDATE = "scale_candidate"
+BASIS_NAME_DEMOTED = "name_demoted"
+BASIS_NO_DATA = "no_data"
+
+
+def _values_fit_more_than_one_reading(series: pd.Series) -> bool:
+    """True when the values are equally consistent with a scale and a count."""
+    values = _coerce_numeric_like_values(series.dropna()).dropna()
+    if values.empty:
+        return False
+    integer_ratio = ((values - values.round()).abs() < 1e-9).mean()
+    if integer_ratio < 0.99:
+        return False
+    minimum, maximum = values.min(), values.max()
+    if maximum - minimum > 10:
+        return False
+    observed = set(int(value) for value in values.unique())
+    return observed == set(range(int(minimum), int(maximum) + 1))
+
+
+def detection_basis(
+    series: pd.Series,
+    column_name: str | None = None,
+    active_type: str | None = None,
+    detected_type: str | None = None,
+) -> dict[str, str]:
+    """What this column's type rests on. Returns {"level", "code"}.
+
+    The two states where the detector declined to decide on its own —
+    a possible zero-based scale, and a demotion made on the column name —
+    are basis codes here rather than separate badges. They are, literally,
+    the basis for the verdict.
+    """
+    if active_type and detected_type and active_type != detected_type:
+        return {"level": BASIS_HIGH, "code": BASIS_USER}
+
+    resolved = active_type or detected_type or detect_question_type(
+        series, column_name=column_name
+    )
+    if resolved == QUESTION_TYPE_EMPTY:
+        return {"level": BASIS_LOW, "code": BASIS_NO_DATA}
+
+    if resolved == QUESTION_TYPE_NUMERIC:
+        if is_scale_candidate(series, column_name):
+            return {"level": BASIS_LOW, "code": BASIS_SCALE_CANDIDATE}
+        if scale_demotion_reason(series, column_name):
+            return {"level": BASIS_LOW, "code": BASIS_NAME_DEMOTED}
+
+    named = series if column_name is None else series.rename(column_name)
+    name_agrees = _column_name_suggests_scale(named) or _column_name_suggests_count(column_name)
+
+    if resolved in (QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE):
+        if name_agrees:
+            return {"level": BASIS_HIGH, "code": BASIS_VALUES_AND_NAME}
+        if _values_fit_more_than_one_reading(series):
+            return {"level": BASIS_MEDIUM, "code": BASIS_VALUES_ONLY}
+        return {"level": BASIS_HIGH, "code": BASIS_VALUES_CLEAR}
+
+    # Text branches: single / multiple / open all turn on a length or
+    # cardinality threshold, so report whether the call was a close one.
+    cleaned = series.replace(r"^\s*$", pd.NA, regex=True).dropna().astype(str).str.strip()
+    cleaned = cleaned[cleaned != ""]
+    if cleaned.empty:
+        return {"level": BASIS_LOW, "code": BASIS_NO_DATA}
+    sample_size = len(cleaned)
+    unique_count = cleaned.nunique()
+    average_length = cleaned.str.len().mean()
+    low_cardinality_limit = min(15, max(6, int(sample_size * 0.1)))
+    near = (
+        abs(unique_count - low_cardinality_limit) <= max(1, low_cardinality_limit * 0.2)
+        or abs(average_length - 40) <= 8
+        or abs(unique_count - 25) <= 3
+    )
+    if near:
+        return {"level": BASIS_MEDIUM, "code": BASIS_NEAR_BOUNDARY}
+    return {"level": BASIS_HIGH, "code": BASIS_VALUES_CLEAR}
+
+
+def detect_scale_demotions(df: pd.DataFrame) -> dict[str, str]:
+    """Columns kept numeric because their name reads as a count."""
+    reasons = {}
+    for column in df.columns:
+        reason = scale_demotion_reason(df[column], column_name=column)
+        if reason:
+            reasons[column] = reason
+    return reasons
+
+
+def _is_scale_question(series: pd.Series, column_name: str | None = None) -> bool:
+    """Value rules, then the name-based demotion.
+
+    A column whose name reads as a count ("家庭人口数", "purchase_times") is kept
+    numeric even when its values sit inside a Likert window. Any count whose
+    range happens to land in 1-5 / 1-7 / 1-10 was being read as a scale, and a
+    misread count is the dangerous direction: it reaches the report and AI
+    layers and gets narrated as a rating. See docs/detection-benchmark.md.
+
+    A scoring keyword in the name wins, so "满意度分数" survives.
+    """
+    if _name_demotes_scale(series, column_name):
+        return False
+    return _is_scale_by_values(series)
 
 
 def detect_question_type(
@@ -202,12 +445,12 @@ def detect_question_type(
         if numeric_ratio >= 0.6:
             # _is_scale_question owns all scale rules (1-5/1-7/1-10 range,
             # integer ratio, decimal ratings via column-name keywords, "5分").
-            if _is_scale_question(series):
+            if _is_scale_question(series, column_name):
                 return QUESTION_TYPE_SCALE
             return QUESTION_TYPE_NUMERIC
 
         if is_numeric_dtype(series):
-            if _is_scale_question(series):
+            if _is_scale_question(series, column_name):
                 return QUESTION_TYPE_SCALE
             return QUESTION_TYPE_NUMERIC
 

@@ -84,6 +84,46 @@ def build_grouped_box_plot(df: pd.DataFrame, numeric_column: str, group_column: 
     return fig
 
 
+def build_correlation_heatmap(df: pd.DataFrame, numeric_columns: list[str], language: str = "en"):
+    usable = [column for column in numeric_columns if column in df.columns]
+    if len(usable) < 2:
+        return None
+
+    corr_matrix = df[usable].apply(pd.to_numeric, errors="coerce").corr().round(2)
+    if corr_matrix.empty:
+        return None
+
+    fig = px.imshow(
+        corr_matrix,
+        text_auto=True,
+        aspect="auto",
+        color_continuous_scale="RdBu",
+        zmin=-1,
+        zmax=1,
+        title=t(language, "plot_correlation_heatmap"),
+    )
+    return fig
+
+
+def build_time_trend_chart(trend_df: pd.DataFrame, column: str, language: str = "en"):
+    if trend_df is None or trend_df.empty:
+        return None
+
+    fig = px.line(
+        trend_df,
+        x="period",
+        y="count",
+        markers=True,
+        title=t(language, "plot_time_trend", column=column),
+        labels={
+            "period": t(language, "label_period"),
+            "count": t(language, "label_record_count"),
+        },
+    )
+    fig.update_layout(xaxis_tickangle=-30)
+    return fig
+
+
 def build_crosstab_chart(
     crosstab_df: pd.DataFrame,
     chart_type: str = "stacked",

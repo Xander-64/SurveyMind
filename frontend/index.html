@@ -496,6 +496,24 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
 .confbar.warn i{background:var(--warn);}
 </style>
 
+<style>/* ============================================================
+   screen-insight additions (general data platform) — additive only.
+   Role badges (.rb.*) borrow the existing type-badge tokens per spec:
+   numeric→num blue, categorical→single purple, multi_value→multi yellow,
+   free_text→open pink, datetime→scale green, identifier/boolean/empty→grey.
+   No new colour values — everything references :root tokens above.
+   ============================================================ */
+.rb{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:7px;white-space:nowrap;line-height:1.5;}
+.rb .d{width:6px;height:6px;border-radius:50%;flex:none;}
+.rb.numeric{background:var(--t-num-bg);color:var(--t-num-fg);} .rb.numeric .d{background:var(--t-num-solid);}
+.rb.categorical{background:var(--t-single-bg);color:var(--t-single-fg);} .rb.categorical .d{background:var(--t-single-solid);}
+.rb.multi{background:var(--t-multi-bg);color:var(--t-multi-fg);} .rb.multi .d{background:var(--t-multi-solid);}
+.rb.text{background:var(--t-open-bg);color:var(--t-open-fg);} .rb.text .d{background:var(--t-open-solid);}
+.rb.datetime{background:var(--t-scale-bg);color:var(--t-scale-fg);} .rb.datetime .d{background:var(--t-scale-solid);}
+.rb.id,.rb.bool,.rb.empty{background:var(--surface-3);color:var(--ink-3);}
+.rb.id .d,.rb.bool .d,.rb.empty .d{background:var(--muted);}
+</style>
+
 </head>
 <body data-lang="zh">
 <div class="app">
@@ -533,6 +551,10 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
         <button class="step" data-screen="overview">
           <span class="num">2</span>
           <span class="tx"><b class="zh">数据概览</b><b class="en">Overview</b><em class="zh">Overview</em><em class="en">Inspect data</em></span>
+        </button>
+        <button class="step" data-screen="insight">
+          <span class="num">✦</span>
+          <span class="tx"><b class="zh">智能分析</b><b class="en">Insights</b><em class="zh">Smart Insights</em><em class="en">Mode &amp; roles</em></span>
         </button>
         <button class="step" data-screen="types">
           <span class="num">3</span>
@@ -707,7 +729,7 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
                 <th><span class="zh">唯一值</span><span class="en">Unique</span></th>
                 <th><span class="zh">缺失</span><span class="en">Missing</span></th>
                 <th><span class="zh">识别题型</span><span class="en">Detected type</span></th>
-                <th><span class="zh">置信度</span><span class="en">Confidence</span></th>
+                <th><span class="zh">识别依据</span><span class="en">Basis</span></th>
                 <th style="text-align:right;"><span class="zh">手动修正</span><span class="en">Override</span></th>
               </tr></thead>
               <tbody>
@@ -1101,6 +1123,132 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
 
       <!-- screens injected below -->
 
+      <!-- ===================================================== -->
+      <!-- SMART INSIGHTS — general data platform (batch 2)      -->
+      <!-- Additive screen: mode card / field roles / quality /  -->
+      <!-- findings / suggestions. Filled by assets/insight.js.  -->
+      <!-- ===================================================== -->
+      <section class="screen" id="screen-insight" data-screen-label="Smart Insights / 智能分析">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">智能分析</div>
+            <div class="eyebrow en">Smart Insights</div>
+            <h1><span class="zh">智能分析</span><span class="en">Smart Insights</span><span class="alt zh">Smart Insights</span><span class="alt en">智能分析</span></h1>
+            <p class="lede zh">数据模式识别、字段角色与通用概览 — 不限问卷，任何表格数据都适用。</p>
+            <p class="lede en">Dataset mode, field roles and a general overview — for any tabular data, not just surveys.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn primary" data-go="types"><span class="zh">下一步：题型识别</span><span class="en">Next: Question Types</span> →</button>
+          </div>
+        </div>
+
+        <!-- block 1 · dataset mode -->
+        <div class="card mb15" id="ins-mode-card">
+          <div class="card-h">
+            <h3><span class="zh">数据模式</span><span class="en">Dataset Mode</span><span class="alt zh">Dataset Mode</span><span class="alt en">数据模式</span></h3>
+            <span class="sel wide" id="ins-mode-sel" style="justify-content:space-between"><span class="lab zh">当前模式</span><span class="lab en">Active</span><span class="zh">—</span><span class="en">—</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;" id="ins-mode-body">
+            <span style="font-size:12.5px;color:var(--muted);"><span class="zh">请先在「上传」步骤导入数据。</span><span class="en">Upload a dataset in the Upload step first.</span></span>
+          </div>
+        </div>
+
+        <!-- block 3a · quality metric row -->
+        <div class="metrics mb15" id="ins-metrics">
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></span><span class="zh">行数</span><span class="en">Rows</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">全部字段（含 ID / 日期）</span><span class="en">all fields incl. ID / dates</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h16"></path><path d="M9 5v14" opacity=".5"></path></svg></span><span class="zh">字段数</span><span class="en">Fields</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20" opacity=".4"></path><circle cx="12" cy="12" r="9"></circle></svg></span><span class="zh">平均缺失</span><span class="en">Missing</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="12" height="12" rx="2"></rect><rect x="8" y="8" width="12" height="12" rx="2" opacity=".5"></rect></svg></span><span class="zh">重复行</span><span class="en">Duplicates</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">完全相同的数据行</span><span class="en">identical rows</span></div>
+          </div>
+        </div>
+
+        <!-- block 2 · field roles -->
+        <div class="card mb15" id="ins-role-card">
+          <div class="card-h">
+            <h3><span class="zh">字段角色</span><span class="en">Field Roles</span><span class="alt zh">Field Roles</span><span class="alt en">字段角色</span></h3>
+            <button class="btn ghost" id="ins-role-reset"><span class="zh">重置角色</span><span class="en">Reset roles</span></button>
+          </div>
+          <div class="scrollx">
+            <table class="dt" id="ins-role-table">
+              <thead><tr>
+                <th><span class="zh">字段名</span><span class="en">Field</span></th>
+                <th><span class="zh">识别角色</span><span class="en">Role</span></th>
+                <th><span class="zh">依据</span><span class="en">Evidence</span></th>
+                <th><span class="zh">非空</span><span class="en">Non-null</span></th>
+                <th><span class="zh">唯一值</span><span class="en">Unique</span></th>
+                <th><span class="zh">缺失</span><span class="en">Missing</span></th>
+                <th style="text-align:right;"><span class="zh">手动修正</span><span class="en">Override</span></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- block 3b · findings + suggestions -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">主要发现</span><span class="en">Key Findings</span><span class="alt zh">Key Findings</span><span class="alt en">主要发现</span></h3><span class="sub mono" id="ins-findings-count">0</span></div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;" id="ins-findings"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">分析建议</span><span class="en">Suggested Analyses</span><span class="alt zh">Suggested Analyses</span><span class="alt en">分析建议</span></h3><span class="sub mono" id="ins-suggestions-count">0</span></div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;" id="ins-suggestions"></div>
+          </div>
+        </div>
+
+        <!-- block 5a · mode-aware report -->
+        <div class="card mb15" id="ins-report-card" style="margin-top:15px;">
+          <div class="card-h">
+            <h3><span class="zh">分析报告</span><span class="en">Analysis Report</span><span class="alt zh">Analysis Report</span><span class="alt en">分析报告</span></h3>
+            <span class="sub mono" id="ins-report-name">report.md</span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12.5px;color:var(--muted);" id="ins-report-note">
+              <span class="zh">报告结构随当前数据模式变化。</span><span class="en">The report structure follows the active dataset mode.</span>
+            </span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn ghost" id="ins-report-preview"><span class="zh">生成预览</span><span class="en">Preview</span></button>
+              <button class="btn primary" id="ins-report-download"><span class="zh">下载 Markdown</span><span class="en">Download Markdown</span> ↓</button>
+            </div>
+            <div class="doc" id="ins-report-doc" style="display:none;max-height:340px;overflow:auto;"></div>
+          </div>
+        </div>
+
+        <!-- block 5b · AI interpretation -->
+        <div class="card" id="ins-ai-card">
+          <div class="card-h">
+            <h3><span class="zh">AI 智能解读</span><span class="en">AI Interpretation</span><span class="alt zh">AI Interpretation</span><span class="alt en">AI 智能解读</span></h3>
+            <span class="pill" id="ins-ai-persona"><span class="zh">—</span><span class="en">—</span></span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12.5px;color:var(--muted);">
+              <span class="zh">AI 只解释本页已由 pandas / SciPy 计算出的统计结果，不接触原始数据。</span>
+              <span class="en">The AI only explains statistics already computed on this page with pandas / SciPy; it never sees the raw data.</span>
+            </span>
+            <div>
+              <button class="btn primary" id="ins-ai-run"><span class="zh">生成 AI 解读</span><span class="en">Generate interpretation</span></button>
+            </div>
+            <div id="ins-ai-status"></div>
+            <div class="doc" id="ins-ai-doc" style="display:none;max-height:340px;overflow:auto;"></div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -1109,4 +1257,5 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
 
 <script src="config.js"></script>
 <script src="data.js"></script>
+<script src="assets/insight.js"></script>
 </body></html>
