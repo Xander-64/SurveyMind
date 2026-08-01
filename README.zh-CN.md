@@ -1,5 +1,8 @@
 # SurveyMind
 
+[![tests](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml/badge.svg)](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 [English README](README.md)
 
 ## 项目简介
@@ -51,23 +54,44 @@ SurveyMind 当前支持五类常见问卷题型：
 
 ```text
 surveymind/
-├── app.py
-├── requirements.txt
-├── README.md
-├── README.zh-CN.md
-├── data/
-│   └── sample_survey.csv
+├── app.py                     Streamlit 界面
+├── backend/main.py            FastAPI 层，薄封装 src/（此处不写分析逻辑）
+├── frontend/                  静态前端，无框架、无构建步骤
+│   ├── index.html             全部屏幕与 design tokens
+│   ├── data.js                分析五屏的数据层
+│   └── assets/insight.js      智能分析屏的数据层
 ├── src/
-│   ├── data_loader.py
-│   ├── question_type_detector.py
-│   ├── descriptive_analysis.py
-│   ├── visualization.py
-│   ├── cross_analysis.py
-│   ├── report_generator.py
-│   └── i18n.py
-├── outputs/
-│   └── sample_report.md
-└── assets/
+│   ├── survey_gen/            问卷生成
+│   │   ├── schema.py          Survey / Section / Question，JSON 无损往返
+│   │   ├── validator.py       方法学校验器（23 条规则 / 34 个 rule_id）
+│   │   ├── vocabulary.py      措辞规则背后的词表
+│   │   ├── templates.py       内置问卷模板，零 API key 可用
+│   │   ├── synthetic.py       按 schema 合成回收数据，附带 ground truth
+│   │   ├── export.py          CSV 模板 / 示例 / Markdown / schema / 编码表
+│   │   └── roundtrip.py       按 schema 解析回收数据，计算构念得分
+│   ├── report/                报告层，每种输出结构一个模块
+│   │   ├── survey.py          问卷报告
+│   │   ├── general.py         通用数据报告
+│   │   ├── mixed.py           混合报告
+│   │   ├── dispatch.py        按当前模式分派
+│   │   ├── common.py          共用格式化 helper
+│   │   └── llm_prompt.py      数据摘要与 prompt 构造
+│   ├── question_type_detector.py   五种题型、量表提示、识别依据
+│   ├── field_semantics.py     八种通用字段角色
+│   ├── dataset_mode.py        general / survey / mixed 模式识别
+│   ├── general_overview.py    质量、相关性、分组差异
+│   ├── analysis_suggestions.py / chart_recommender.py
+│   ├── descriptive_analysis.py / cross_analysis.py / visualization.py
+│   ├── preprocessing.py / data_loader.py / i18n.py
+│   └── llm_client.py / ai_report.py    可选 AI 层，未配置时自动降级
+├── tests/                     390 个测试
+│   └── fixtures/              问卷与检测 fixture
+├── docs/
+│   ├── detection-benchmark.md        量表 vs 计数，以及端到端对照
+│   ├── external-validity-check.md    校验器对真实专业问卷的检验
+│   └── specs/                        设计文档
+├── data/                      样例数据集
+└── .github/workflows/tests.yml
 ```
 
 ## 本地运行方法

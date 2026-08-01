@@ -1,9 +1,7 @@
 # SurveyMind
 
-[![tests](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml/badge.svg?branch=feature/general-data-platform)](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml)
+[![tests](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml/badge.svg)](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-<!-- The tests badge is pinned to the working branch so it shows a real result
-     today. Drop the ?branch= parameter once this branch is merged to main. -->
 
 [简体中文说明](README.zh-CN.md)
 
