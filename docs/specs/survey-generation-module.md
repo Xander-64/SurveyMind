@@ -931,8 +931,8 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 | **2** | `templates.py`（3-4 个本地主题模板）+ `export.py`（5 种导出）+ `synthetic.py` | 一天 | **第一个完整闭环，零 API key**：模板 → 校验 0 error → 导出 → 合成 200 行 → 喂 `/api/upload` → 200 且题型对得上 |
 | **3** ✅ | `analysis_plan.py` + 准确率基准（§8.1 Feldt CI + item-total、§8.2 三组样本量**均以 nct 精确搜索为准**、§8.3 非参数分支 + §8.3.1 Somers' D 趋势检验）+ `test_detection_accuracy.py` + `docs/detection-benchmark.md` | 一天 | **已完成**：分析计划 + 混淆矩阵基准（`docs/detection-benchmark.md` §9），422 passed |
 | **4** | `llm_author.py`：prompt 骨架 + `_extract_json_block` + 结构校验 + 2 次重试 + 三态降级 | 一天 | mock `call_llm` 覆盖四条路径；无 key 自动走模板；引用过滤器有测试 |
-| **5** | `/api/gen/*` 全部端点 + `drafts_tmp`（24h TTL）+ `test_api_gen.py` | 一天 | curl 走通四步；**现有 `test_api` / `test_api_v2` 一字不改全绿** |
-| **6** | 前端 `screen-build` + `build.js` + index.html/nav.js 增量 + 自动下载 schema.json + `sm_draft` 续接 | 一天 | 浏览器完整演示；无 key 显示模板降级；双语正常；控制台无报错 |
+| **5** ✅ | `/api/gen/*` 全部端点 + `drafts_tmp`（24h TTL）+ `test_api_gen.py` | 一天 | curl 走通四步；**现有 `test_api` / `test_api_v2` 一字不改全绿** |
+| **6** ✅ | 前端 `screen-build` + `build.js` + index.html/nav.js 增量 + 自动下载 schema.json + `sm_draft` 续接 | 一天 | 浏览器完整演示；无 key 显示模板降级；双语正常；控制台无报错 |
 | **7** | §12 全部：`survey_link/alignment.py`（动态权重 + 连续列块）+ `physical_encoding.py` + schema-link/conflicts 端点 + types 屏增量 | 一天 | §12.2 的量表块匹配三项断言全过；**关掉 schema 时行为与今天逐字节一致** |
 | **8** | insight 屏改标题「数据质量与字段识别」+ README 与对外表述改为「问卷全流程工具」 | 半天 | 文档一致性 |
 
@@ -1263,3 +1263,69 @@ caveat 写明 τ 等价假设、题项方差不齐时区间偏窄、
 （题型、列数、上传成功、导出齐全），没有一条需要题项之间真的相关，
 因此独立抽样的假数据在每一个被断言的维度上都是真的。
 另记了同一批测试里的成分重叠（part-whole overlap）问题。
+
+
+---
+
+## 19. 批 5 + 批 6 交付记录（2026-08-02）
+
+### 19.1 为什么先做 5+6，把批 4 押后
+
+批 4（LLM 作者层）原本排在前面。调整顺序的理由，按重要性：
+
+1. **契约方向。** 先定端点，`llm_author` 落地时只需满足既有契约；
+   反过来做，端点形状是围绕"模型碰巧返回什么"猜出来的。
+2. **LLM 文案质量需要界面才看得出好坏。** 有了界面，批 4 落地时能当场
+   对比模板生成 vs LLM 生成；没有界面就是在黑盒里调 prompt。
+3. 生成链路批 2 就通了，但只能命令行跑，转向之后的核心功能一直没有形状。
+
+### 19.2 端点
+
+| 端点 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/gen/templates` | GET | 内置模板目录 |
+| `/api/gen/drafts` | POST | 建草稿；一次返回 survey + validation + analysis_plan |
+| `/api/gen/{id}` | GET / PUT | 读取 / 整体替换并重新校验 |
+| `/api/gen/{id}/validate` | POST | 单独校验（纯函数，可随手调） |
+| `/api/gen/{id}/analysis-plan` | GET | 单独取分析计划 |
+| `/api/gen/{id}/export` | GET | 五种格式，`?download=true` 带文件名 |
+
+**草稿 TTL 24 小时**（上传会话是 1 小时）：草稿是一次坐下来编辑的东西，
+上传是一次性消费的东西。超过一天不留——真正要保留的草稿靠下载
+`schema.json`，这就是一个无数据库、无账号的工具的全部持久化故事。
+
+**请求形状为批 4 预留**：`POST /api/gen/drafts` 现在要求 `template`；
+批 4 落地时增加可选的 `brief` 与 `use_llm`，属于增量，不破坏契约。
+
+### 19.3 对"是谁生成的"保持诚实
+
+批 4 未做，所以**界面上没有任何 AI 生成入口**。API 返回
+`generation_mode: "template"` 与 `llm_used: false`，
+界面直接渲染这个字段，显示：
+
+> 本问卷由**内置模板**生成，未调用任何语言模型。AI 撰写功能尚未接入。
+
+**没有做一个"AI 生成"按钮在底下偷偷跑模板。** 一个读者若在事后发现
+界面暗示了不存在的 AI 参与，他有理由怀疑这一页上的其他一切。
+批 4 落地时 `generation_mode` 在后端改变，前端无需改动即可跟随。
+
+前端还留了一条一致性检查：若后端同时返回 `generation_mode: "template"`
+与 `llm_used: true`，界面**报告这个矛盾**而不是挑一个显示。
+
+### 19.4 浏览器实测
+
+服务体验模板 → 13 题、0 error / 1 提示、2 构念、建议样本量 125；
+结构树 13 行（含「反向」「注意力」「选填」标记与变量名）；
+分析计划 37 项（Cronbach's α 100、t 检验 64、ANOVA 109）；
+五种导出全部 200 且 content-type 正确，`download=true` 带
+`attachment; filename=...`。中英双语正常，控制台无错误。
+
+**一处交互细节**：选定模板后自动触发一次 `schema.json` 下载。
+schema 是必须与回收数据同行的东西（§12、`detection-benchmark.md` §8），
+把它放在导出行里等人自己发现，风险太高。
+
+### 19.5 环境备忘
+
+前端验证仍在 `127.0.0.1:5500` 完成。`localhost:5500` 上浏览器会缓存旧的
+JS，强制刷新无效——两者是不同 origin，缓存独立。这一条已在
+`route2-frontend-integration.md` §10 记过一次，这次直接照用，没有再踩。

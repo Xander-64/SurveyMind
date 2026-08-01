@@ -544,6 +544,11 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
       <div class="side-cap en">Workflow</div>
       <nav class="steps">
         <div class="step-rail"></div>
+        <button class="step" data-screen="build">
+          <span class="n">✎</span>
+          <span class="t"><span class="zh">问卷设计</span><span class="en">Design</span>
+            <small><span class="zh">生成与校验</span><span class="en">Build &amp; check</span></small></span>
+        </button>
         <button class="step done" data-screen="upload">
           <span class="num">✓</span>
           <span class="tx"><b class="zh">上传</b><b class="en">Upload</b><em class="zh">数据导入</em><em class="en">Import data</em></span>
@@ -1249,6 +1254,114 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
         </div>
       </section>
 
+
+      <section class="screen" id="screen-build" data-screen-label="Design / 问卷设计">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow zh">问卷设计</div>
+            <div class="eyebrow en">Survey Design</div>
+            <h1><span class="zh">问卷设计</span><span class="en">Survey Design</span><span class="alt zh">Survey Design</span><span class="alt en">问卷设计</span></h1>
+            <p class="lede zh">选择模板生成问卷 — 自动校验方法学问题，给出分析计划，导出投放所需的全部文件。</p>
+            <p class="lede en">Build a questionnaire from a template — checked against methodology rules, with an analysis plan and every file you need to field it.</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn primary" data-go="upload"><span class="zh">已有回收数据？去上传</span><span class="en">Have responses? Upload</span> →</button>
+          </div>
+        </div>
+
+        <!-- 1 · template picker -->
+        <div class="card mb15" id="bld-picker">
+          <div class="card-h">
+            <h3><span class="zh">选择模板</span><span class="en">Choose a template</span><span class="alt zh">Choose a template</span><span class="alt en">选择模板</span></h3>
+            <span class="sub mono" id="bld-source">—</span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <div id="bld-templates" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="bld-mode-note"></div>
+          </div>
+        </div>
+
+        <!-- 2 · summary metrics -->
+        <div class="metrics mb15" id="bld-metrics">
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"></path></svg></span><span class="zh">题目数</span><span class="en">Questions</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M9 12l2 2 4-4"></path></svg></span><span class="zh">校验结果</span><span class="en">Validation</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"></path></svg></span><span class="zh">构念数</span><span class="en">Constructs</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+          <div class="metric">
+            <div class="k"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></span><span class="zh">建议样本量</span><span class="en">Suggested n</span></div>
+            <div class="row"><div class="v tnum">—</div></div>
+            <div class="foot"><span class="zh">—</span><span class="en">—</span></div>
+          </div>
+        </div>
+
+        <!-- 3 · structure tree -->
+        <div class="card mb15" id="bld-structure-card">
+          <div class="card-h">
+            <h3><span class="zh">问卷结构</span><span class="en">Structure</span><span class="alt zh">Structure</span><span class="alt en">问卷结构</span></h3>
+            <span class="sub mono" id="bld-structure-count">0</span>
+          </div>
+          <div class="scrollx">
+            <table class="dt" id="bld-structure">
+              <thead><tr>
+                <th><span class="zh">编号</span><span class="en">No.</span></th>
+                <th><span class="zh">题干</span><span class="en">Question</span></th>
+                <th><span class="zh">题型</span><span class="en">Type</span></th>
+                <th><span class="zh">构念</span><span class="en">Construct</span></th>
+                <th><span class="zh">标记</span><span class="en">Flags</span></th>
+                <th><span class="zh">变量名</span><span class="en">Code</span></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4 · validation + analysis plan -->
+        <div class="grid-2 mb15">
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">方法学校验</span><span class="en">Methodology check</span><span class="alt zh">Methodology check</span><span class="alt en">方法学校验</span></h3><span class="sub mono" id="bld-issues-count">0</span></div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:10px;" id="bld-issues"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3><span class="zh">分析计划</span><span class="en">Analysis plan</span><span class="alt zh">Analysis plan</span><span class="alt en">分析计划</span></h3><span class="sub mono" id="bld-plan-count">0</span></div>
+            <div class="scrollx" style="max-height:340px;overflow:auto;">
+              <table class="dt" id="bld-plan">
+                <thead><tr>
+                  <th><span class="zh">方法</span><span class="en">Method</span></th>
+                  <th><span class="zh">对象</span><span class="en">Target</span></th>
+                  <th style="text-align:right;"><span class="zh">最小样本</span><span class="en">min n</span></th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 · exports -->
+        <div class="card" id="bld-export-card">
+          <div class="card-h">
+            <h3><span class="zh">导出</span><span class="en">Export</span><span class="alt zh">Export</span><span class="alt en">导出</span></h3>
+            <span class="sub mono" id="bld-export-note">5 files</span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12.5px;color:var(--muted);">
+              <span class="zh">把空模板交给问卷星或 Google Forms 投放；回收后带着 schema.json 一起上传，题型与反向计分才能还原。</span>
+              <span class="en">Field the empty template on your platform of choice; bring schema.json back with the responses so types and reverse-keying survive the round trip.</span>
+            </span>
+            <div id="bld-exports" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -1258,4 +1371,5 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
 <script src="config.js"></script>
 <script src="data.js"></script>
 <script src="assets/insight.js"></script>
+<script src="assets/build.js"></script>
 </body></html>

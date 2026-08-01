@@ -21,3 +21,4 @@ tests/fixtures/surveys/external_wording.json
 *.egg-info/
 .coverage
 htmlcov/
+drafts_tmp/

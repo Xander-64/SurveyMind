@@ -72,10 +72,27 @@ from src.report import (
     generate_markdown_report,
     generate_report,
 )
+from src.survey_gen.analysis_plan import build_analysis_plan
+from src.survey_gen.export import (
+    export_codebook_markdown,
+    export_questionnaire_markdown,
+    export_sample_csv,
+    export_schema_json,
+    export_template_csv,
+)
+from src.survey_gen.schema import Survey
+from src.survey_gen.templates import build_template, list_templates
+from src.survey_gen.validator import validate_survey
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SESSIONS_DIR = PROJECT_ROOT / "uploads_tmp"
 SESSION_MAX_AGE_SECONDS = 60 * 60
+# Drafts are edited over a sitting, not consumed in one request, so they live a
+# day rather than an hour. Nothing persists beyond that: a draft that matters is
+# downloaded as schema.json, which is the persistence story for a tool with no
+# database and no accounts.
+DRAFTS_DIR = PROJECT_ROOT / "drafts_tmp"
+DRAFT_MAX_AGE_SECONDS = 24 * 60 * 60
 SESSION_CLEANUP_INTERVAL_SECONDS = 30
 LOCAL_FRONTEND_ORIGINS = (
     "http://127.0.0.1:5500",
@@ -155,12 +172,23 @@ async def _session_cleanup_loop() -> None:
     """Delete expired upload sessions even when no new upload arrives."""
     while True:
         _cleanup_old_sessions()
+        _cleanup_old_drafts()
         await asyncio.sleep(SESSION_CLEANUP_INTERVAL_SECONDS)
+
+
+def _cleanup_old_drafts(*, now: float | None = None) -> None:
+    if not DRAFTS_DIR.exists():
+        return
+    cutoff = (time.time() if now is None else now) - DRAFT_MAX_AGE_SECONDS
+    for draft_dir in DRAFTS_DIR.iterdir():
+        if draft_dir.is_dir() and _session_created_at(draft_dir) <= cutoff:
+            shutil.rmtree(draft_dir, ignore_errors=True)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     _cleanup_old_sessions()
+    _cleanup_old_drafts()
     if SESSIONS_DIR.exists():
         for session_dir in SESSIONS_DIR.iterdir():
             if session_dir.is_dir():
@@ -760,3 +788,218 @@ def general_overview(session_id: str):
         "chart_specs": recommend_charts(df, semantics, overview),
         "numeric_histograms": _numeric_histograms(df, numeric_columns),
     }
+
+
+# --- Questionnaire generation (drafts) ---------------------------------------
+#
+# Same thin-wrapper rule as everywhere else: these endpoints store, load and
+# serialise. Every decision about what a questionnaire may contain lives in
+# src/survey_gen and is exercised by its own tests.
+#
+# The LLM author is a later batch. Until it lands, generation means "build one
+# of the bundled templates", and the response says so in `generation_mode`
+# rather than implying an AI wrote it. The request shape already has room for
+# the LLM path — adding `brief` and `use_llm` later is additive.
+
+
+DRAFT_NOT_FOUND = "Draft not found or expired. Generate a new one."
+
+
+def _draft_path(draft_id: str) -> Path:
+    return DRAFTS_DIR / draft_id / "survey.json"
+
+
+def _save_draft(survey: Survey, generation: dict) -> str:
+    draft_id = uuid.uuid4().hex
+    directory = DRAFTS_DIR / draft_id
+    directory.mkdir(parents=True, exist_ok=True)
+    payload = survey.to_dict()
+    payload["_draft"] = {"draft_id": draft_id, "created_at": time.time(), **generation}
+    (directory / "survey.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    (directory / "meta.json").write_text(
+        json.dumps({"created_at": time.time()}, ensure_ascii=False), encoding="utf-8"
+    )
+    return draft_id
+
+
+def _load_draft(draft_id: str) -> tuple[Survey, dict]:
+    path = _draft_path(draft_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=DRAFT_NOT_FOUND)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    draft_meta = payload.pop("_draft", {})
+    if float(draft_meta.get("created_at", 0)) + DRAFT_MAX_AGE_SECONDS <= time.time():
+        shutil.rmtree(DRAFTS_DIR / draft_id, ignore_errors=True)
+        raise HTTPException(status_code=404, detail=DRAFT_NOT_FOUND)
+    return Survey.from_dict(payload), draft_meta
+
+
+def _draft_payload(survey: Survey, draft_meta: dict) -> dict:
+    """Everything the builder screen needs, in one response.
+
+    Validation and the analysis plan are cheap and pure, so they ship with the
+    draft rather than behind extra round trips. The screen shows all three at
+    once; splitting them would only add loading states.
+    """
+    issues = [issue.to_dict() for issue in validate_survey(survey)]
+    return {
+        "draft_id": draft_meta.get("draft_id"),
+        "created_at": draft_meta.get("created_at"),
+        "generation_mode": draft_meta.get("generation_mode", "template"),
+        "generation": {
+            key: value for key, value in draft_meta.items()
+            if key not in {"draft_id", "created_at"}
+        },
+        "survey": survey.to_dict(),
+        "validation": {
+            "issues": issues,
+            "counts": {
+                "error": sum(1 for i in issues if i["severity"] == "error"),
+                "warning": sum(1 for i in issues if i["severity"] == "warning"),
+                "info": sum(1 for i in issues if i["severity"] == "info"),
+            },
+        },
+        "analysis_plan": build_analysis_plan(survey),
+    }
+
+
+@app.get("/api/gen/templates")
+def gen_templates():
+    """The built-in questionnaires. Available with no API key configured."""
+    return {"templates": list_templates()}
+
+
+@app.post("/api/gen/drafts")
+def gen_create_draft(body: dict | None = None):
+    """Create a draft from a bundled template.
+
+    `template` is required today. When the LLM author lands it will become
+    optional alongside `brief`, and `generation_mode` will report which path
+    produced the draft — which is why the field exists now rather than being
+    added later.
+    """
+    body = body or {}
+    template = body.get("template")
+    if not template:
+        raise HTTPException(
+            status_code=400,
+            detail="A template key is required. GET /api/gen/templates lists them.",
+        )
+    try:
+        survey = build_template(template)
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Unknown template: {template}")
+
+    language = body.get("language") or survey.primary_language
+    survey.primary_language = language
+    generation = {
+        "generation_mode": "template",
+        "template": template,
+        "llm_used": False,
+        # Stated plainly so the interface can say so too, instead of leaving a
+        # reader to assume a model wrote this.
+        "note": "Built from a bundled template; no language model was called.",
+    }
+    draft_id = _save_draft(survey, generation)
+    survey, draft_meta = _load_draft(draft_id)
+    return _draft_payload(survey, draft_meta)
+
+
+@app.get("/api/gen/{draft_id}")
+def gen_get_draft(draft_id: str):
+    survey, draft_meta = _load_draft(draft_id)
+    return _draft_payload(survey, draft_meta)
+
+
+@app.put("/api/gen/{draft_id}")
+def gen_update_draft(draft_id: str, body: dict):
+    """Replace the draft wholesale and revalidate.
+
+    Whole-document replacement rather than field patches: the validator works
+    over a complete survey, so a partial update would have to be reassembled
+    into one anyway.
+    """
+    _, draft_meta = _load_draft(draft_id)
+    payload = body.get("survey")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Body must contain a `survey` object.")
+    try:
+        survey = Survey.from_dict(payload)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid survey: {exc}")
+
+    stored = survey.to_dict()
+    stored["_draft"] = {**draft_meta, "edited_at": time.time()}
+    _draft_path(draft_id).write_text(
+        json.dumps(stored, ensure_ascii=False), encoding="utf-8"
+    )
+    survey, draft_meta = _load_draft(draft_id)
+    return _draft_payload(survey, draft_meta)
+
+
+@app.post("/api/gen/{draft_id}/validate")
+def gen_validate(draft_id: str):
+    """Validation on its own. Pure and fast, so an editor can call it freely."""
+    survey, _ = _load_draft(draft_id)
+    issues = [issue.to_dict() for issue in validate_survey(survey)]
+    return {
+        "issues": issues,
+        "counts": {
+            "error": sum(1 for i in issues if i["severity"] == "error"),
+            "warning": sum(1 for i in issues if i["severity"] == "warning"),
+            "info": sum(1 for i in issues if i["severity"] == "info"),
+        },
+    }
+
+
+@app.get("/api/gen/{draft_id}/analysis-plan")
+def gen_analysis_plan(draft_id: str):
+    survey, _ = _load_draft(draft_id)
+    return build_analysis_plan(survey)
+
+
+EXPORT_MEDIA = {
+    "template_csv": ("text/csv", "%s_template.csv"),
+    "sample_csv": ("text/csv", "%s_sample.csv"),
+    "schema_json": ("application/json", "%s_schema.json"),
+    "questionnaire_md": ("text/markdown", "%s_questionnaire.%s.md"),
+    "codebook_md": ("text/markdown", "%s_codebook.%s.md"),
+}
+
+
+@app.get("/api/gen/{draft_id}/export")
+def gen_export(draft_id: str, format: str = "schema_json", language: str = "zh-CN",
+               download: bool = False):
+    """One artifact per call, as a plain text response.
+
+    Text rather than JSON-wrapped because every one of these is a file the user
+    saves; wrapping would make the browser download a JSON envelope.
+    """
+    survey, _ = _load_draft(draft_id)
+    if format not in EXPORT_MEDIA:
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown format: %s. One of: %s" % (format, ", ".join(EXPORT_MEDIA)),
+        )
+
+    if format == "template_csv":
+        content = export_template_csv(survey)
+    elif format == "sample_csv":
+        content = export_sample_csv(survey)
+    elif format == "schema_json":
+        content = export_schema_json(survey)
+    elif format == "questionnaire_md":
+        content = export_questionnaire_markdown(survey, language)
+    else:
+        content = export_codebook_markdown(survey, language)
+
+    media_type, pattern = EXPORT_MEDIA[format]
+    stem = survey.survey_id[:12]
+    filename = pattern % ((stem, language) if pattern.count("%s") == 2 else stem)
+    headers = (
+        {"Content-Disposition": 'attachment; filename="%s"' % filename}
+        if download else {}
+    )
+    return PlainTextResponse(content, media_type=media_type, headers=headers)
