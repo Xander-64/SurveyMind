@@ -726,8 +726,8 @@ tests/
 准确率曲线。**另外必须输出 §7.1 各语义规则在 golden 问卷上的误报率**——
 这是 §7.0 严重度升级的唯一依据。
 
-**阈值**：先跑 baseline，阈值设在 baseline 略低处（实测 0.92 → 断言 ≥0.88），
-作为**回归护栏而非目标**。
+**阈值**：先跑 baseline，阈值设在 baseline 略低处，作为**回归护栏而非目标**。
+（实际落地见 `docs/detection-benchmark.md` §9：实测 0.973，`clean` 档断言 ≥0.85。）
 
 **产出物**：`docs/detection-benchmark.md`（混淆矩阵 + 准确率曲线 + 误报率表）。
 
@@ -929,7 +929,7 @@ API 增量：`/detect` 每项增加 `declared` / `resolution` / `conflict` 三�
 | **0** ✅ | **拆分 `report_generator.py` → `src/report/` 包**：`common` / `llm_prompt` / `survey` / `general` / `mixed` / `dispatch`；`__init__.py` 导出公开 API；`report_generator.py` 降为 shim，re-export 全部 36 个名字（含 `_build_numeric_findings`） | 半天 | **已完成**：137 passed（基线 137），测试零改动，AST 逐函数比对 36/36 一致（方法见 §16） |
 | **1** ✅ | `survey_gen/schema.py` + `vocabulary.py` + `validator.py`（22 个规则函数 / 34 个 rule_id）+ 四份 fixture + `i18n.VALIDATOR_RULE_TRANSLATIONS` | 一天 | **已完成**：229 passed（基线 137，新增 92）；golden 问卷 **0 error 且 0 warning**；34/34 rule_id 均有双语文案且被测试触达 |
 | **2** | `templates.py`（3-4 个本地主题模板）+ `export.py`（5 种导出）+ `synthetic.py` | 一天 | **第一个完整闭环，零 API key**：模板 → 校验 0 error → 导出 → 合成 200 行 → 喂 `/api/upload` → 200 且题型对得上 |
-| **3** ✅ | `analysis_plan.py`（§8.1 Feldt CI + item-total、§8.2 三组样本量**均以 nct 精确搜索为准**、§8.3 非参数分支 + §8.3.1 Somers' D 趋势检验）+ `test_detection_accuracy.py` + `docs/detection-benchmark.md` | 一天 | **`analysis_plan.py` 已完成**（410 passed）；真值评估基准待做 |
+| **3** ✅ | `analysis_plan.py` + 准确率基准（§8.1 Feldt CI + item-total、§8.2 三组样本量**均以 nct 精确搜索为准**、§8.3 非参数分支 + §8.3.1 Somers' D 趋势检验）+ `test_detection_accuracy.py` + `docs/detection-benchmark.md` | 一天 | **已完成**：分析计划 + 混淆矩阵基准（`docs/detection-benchmark.md` §9），422 passed |
 | **4** | `llm_author.py`：prompt 骨架 + `_extract_json_block` + 结构校验 + 2 次重试 + 三态降级 | 一天 | mock `call_llm` 覆盖四条路径；无 key 自动走模板；引用过滤器有测试 |
 | **5** | `/api/gen/*` 全部端点 + `drafts_tmp`（24h TTL）+ `test_api_gen.py` | 一天 | curl 走通四步；**现有 `test_api` / `test_api_v2` 一字不改全绿** |
 | **6** | 前端 `screen-build` + `build.js` + index.html/nav.js 增量 + 自动下载 schema.json + `sm_draft` 续接 | 一天 | 浏览器完整演示；无 key 显示模板降级；双语正常；控制台无报错 |
@@ -1241,3 +1241,25 @@ caveat 写明 τ 等价假设、题项方差不齐时区间偏窄、
 实测原始值 r = **−0.506**，重编码后 r = **+0.506**，
 并断言两者互为相反数。同时新增一条测试守住合成器本身
 （同构念题项两两相关必须 > 0.15），防止潜变量实现再次退化而无人察觉。
+
+
+### 18.5 数据 provenance（凡引用合成数据的统计量必读）
+
+**2026-08-01 之前由合成器产出的任何相关性、信度类统计量都不可用**，
+因为那一版 `_scale_values` 的潜变量只存在于注释里（见 §18.3）。
+
+- **不受影响**：样本量（纯分布计算）、检测器值域映射（构造的等距整数列，
+  题型判定不依赖题项间相关）、CFPS 外部效度计数（真实问卷结构，非合成）。
+- **受影响并已重跑**：α 与题项-总分相关（§18.2）、
+  反向计分相关（§18.4）、`docs/detection-benchmark.md` §8.2 的那张表。
+
+这条 provenance 记在这里，是因为**以后有人拿旧数字做对比一定会出错**——
+旧数字看起来同样是"实测得到"的。
+
+### 18.6 关于"绿色的测试能掩盖什么"
+
+由此事故引出的一般性讨论，写在 `docs/detection-benchmark.md` §10，
+不在本文档展开。要点：批 2 的 17 个测试断言的全是**数据的形状**
+（题型、列数、上传成功、导出齐全），没有一条需要题项之间真的相关，
+因此独立抽样的假数据在每一个被断言的维度上都是真的。
+另记了同一批测试里的成分重叠（part-whole overlap）问题。
