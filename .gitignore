@@ -10,3 +10,14 @@ uploads_tmp/
 # tests/fixtures/surveys/external_structure.json carries the structure with the
 # original wording removed. See docs/external-validity-check.md.
 tests/fixtures/surveys/external_wording.json
+
+# Editor and IDE state. Local settings files routinely carry machine paths
+# and sometimes credentials, so these are here to prevent a future mistake
+# rather than to fix a current one.
+.vscode/
+.idea/
+
+# Build and coverage artifacts
+*.egg-info/
+.coverage
+htmlcov/
