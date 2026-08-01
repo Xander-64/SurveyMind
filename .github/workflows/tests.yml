@@ -1,0 +1,36 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # -rs prints the reason for every skip. Nine tests skip here by design:
+      # they exercise a third-party questionnaire's own wording, which is not
+      # redistributed in this repository (see docs/external-validity-check.md).
+      # The committed structure-only fixture covers the same findings, so a
+      # skipped run is a complete run, not a degraded one.
+      - name: Run tests
+        run: pytest -q -rs
+
+      # flake8 configured in setup.cfg to run pyflakes checks only, so the
+      # re-export facade in src/report_generator.py can mark its intentional
+      # unused imports with # noqa: F401 instead of being excluded wholesale.
+      - name: Lint
+        run: flake8 src backend tests

@@ -39,6 +39,10 @@
     });
   }
 
+  function apiLang() {
+    return document.body.getAttribute("data-lang") === "en" ? "en" : "zh-CN";
+  }
+
   function sessionId() {
     try { return localStorage.getItem("sm_session") || null; } catch (e) { return null; }
   }
@@ -156,6 +160,8 @@
         }).then(function (res) {
           cache.mode = res;
           renderMode();
+          renderReportCard();
+          renderAIPersona();
         }).catch(showLoadError);
       });
       sel.value = active;
@@ -308,12 +314,145 @@
       dual("暂无建议。", "No suggestions yet.") + "</div>";
   }
 
+  /* ---------- report + AI (batch 4) ---------- */
+
+  /* Minimal markdown rendering, same subset data.js already handles on the
+     export screen. Escaping first, then promoting backticks, so a report can
+     never inject markup. */
+  function mdToHTML(md) {
+    return md.split("\n").map(function (line) {
+      var body = esc(line).replace(/`([^`]+)`/g, "<b>$1</b>");
+      if (/^# /.test(line)) return "<h2>" + esc(line.slice(2)) + "</h2>";
+      if (/^## /.test(line)) return "<h3>" + esc(line.slice(3)) + "</h3>";
+      if (/^- /.test(line)) return '<p style="margin:2px 0">· ' + body.replace(/^- /, "") + "</p>";
+      return line.trim() ? "<p>" + body + "</p>" : "";
+    }).join("");
+  }
+
+  function activeMode() {
+    return (cache.mode && cache.mode.active) || "general";
+  }
+
+  /* The report endpoint has always accepted a mode; the older export screen
+     only ever sent language, so the general and mixed structures were
+     unreachable from the browser. This sends both. */
+  function reportQuery(download) {
+    var query = "?mode=" + encodeURIComponent(activeMode()) +
+      "&language=" + encodeURIComponent(apiLang());
+    return query + (download ? "&download=true" : "");
+  }
+
+  function renderReportCard() {
+    var name = $("#ins-report-name");
+    if (name) {
+      var file = (localStorage.getItem("sm_file") || "dataset").replace(/\.[^.]+$/, "");
+      name.textContent = file + "_" + activeMode() + "_report.md";
+    }
+    var note = $("#ins-report-note");
+    if (note) {
+      var m = MODE_META[activeMode()] || { zh: activeMode(), en: activeMode() };
+      note.innerHTML = dual(
+        "当前模式：" + esc(m.zh) + "，报告结构随之变化。",
+        "Active mode: " + esc(m.en) + "; the report structure follows it."
+      );
+    }
+  }
+
+  function previewReport() {
+    var doc = $("#ins-report-doc");
+    if (!doc || !cache.sessionId) return;
+    doc.style.display = "block";
+    doc.innerHTML = dual("正在生成…", "Generating…");
+    api("/api/" + cache.sessionId + "/report" + reportQuery(false))
+      .then(function (res) { doc.innerHTML = mdToHTML(res.markdown || ""); })
+      .catch(function (err) {
+        doc.innerHTML = dual("生成失败：" + esc(err.message), "Failed: " + esc(err.message));
+      });
+  }
+
+  var AI_PERSONA = {
+    general: { zh: "通用数据分析师", en: "General data analyst" },
+    survey: { zh: "问卷分析师", en: "Survey analyst" },
+    mixed: { zh: "混合数据分析师", en: "Mixed-data analyst" },
+  };
+
+  /* Three outcomes. The API reports them as ok / not_configured / api_error;
+     src/ai_report names the third one AI_STATUS_FAILED internally. Both spell
+     the same state, so map on the wire vocabulary and keep the two layers
+     independent.
+
+     not_configured is an ordinary outcome, not an error: everything else on
+     this page is rule-based and stays available without a key. */
+  var AI_MESSAGE = {
+    not_configured: {
+      cls: "info",
+      zh: "尚未配置 AI 服务（在 .env 中设置 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL）。本页其余分析全部基于本地规则，不受影响。",
+      en: "No AI service configured (set LLM_API_KEY / LLM_BASE_URL / LLM_MODEL in .env). Everything else on this page is rule-based and unaffected.",
+    },
+    api_error: {
+      cls: "warn",
+      zh: "AI 服务调用失败。本页其余分析全部基于本地规则，不受影响。",
+      en: "The AI service call failed. Everything else on this page is rule-based and unaffected.",
+    },
+  };
+
+  function renderAIPersona() {
+    var pill = $("#ins-ai-persona");
+    if (!pill) return;
+    var persona = AI_PERSONA[activeMode()] || AI_PERSONA.general;
+    var zh = pill.querySelector(".zh"), en = pill.querySelector(".en");
+    if (zh) zh.textContent = persona.zh;
+    if (en) en.textContent = persona.en;
+  }
+
+  function setAIStatus(state) {
+    var box = $("#ins-ai-status");
+    if (!box) return;
+    if (!state) { box.innerHTML = ""; return; }
+    var meta = AI_MESSAGE[state];
+    if (!meta) { box.innerHTML = ""; return; }
+    box.innerHTML = '<div class="ins ' + meta.cls + '"><span class="ib">' +
+      FINDING_ICONS[meta.cls === "warn" ? "warn" : "info"] + "</span>" +
+      dual(esc(meta.zh), esc(meta.en)) + "</div>";
+  }
+
+  function runAIReport() {
+    var doc = $("#ins-ai-doc"), button = $("#ins-ai-run");
+    if (!cache.sessionId) return;
+    if (button) button.disabled = true;
+    setAIStatus(null);
+    if (doc) { doc.style.display = "block"; doc.innerHTML = dual("正在调用…", "Calling the AI service…"); }
+
+    /* Passing a body is what switches the backend to the three personas; the
+       older call sent none and always got the survey persona. */
+    api("/api/" + cache.sessionId + "/ai-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: activeMode(), language: apiLang() }),
+    }).then(function (res) {
+      if (button) button.disabled = false;
+      if (res.ok && res.markdown) {
+        if (doc) doc.innerHTML = mdToHTML(res.markdown);
+        setAIStatus(null);
+      } else {
+        if (doc) { doc.style.display = "none"; doc.innerHTML = ""; }
+        setAIStatus(res.reason || "api_error");
+      }
+    }).catch(function () {
+      if (button) button.disabled = false;
+      if (doc) { doc.style.display = "none"; doc.innerHTML = ""; }
+      setAIStatus("api_error");
+    });
+  }
+
   function renderAll() {
     renderMode();
     renderMetrics();
     renderRoles();
     renderFindings();
     renderSuggestions();
+    renderReportCard();
+    renderAIPersona();
   }
 
   /* ---------- loading ---------- */
@@ -376,6 +515,20 @@
         }).catch(showLoadError);
       });
     }
+
+    var preview = $("#ins-report-preview");
+    if (preview) preview.addEventListener("click", previewReport);
+
+    var download = $("#ins-report-download");
+    if (download) {
+      download.addEventListener("click", function () {
+        if (!cache.sessionId) return;
+        window.open(API + "/api/" + cache.sessionId + "/report" + reportQuery(true), "_blank");
+      });
+    }
+
+    var aiRun = $("#ins-ai-run");
+    if (aiRun) aiRun.addEventListener("click", runAIReport);
 
     /* page reloaded while this screen was active (nav.js restores it) */
     var screen = $("#screen-insight");

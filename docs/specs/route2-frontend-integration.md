@@ -263,3 +263,45 @@ nav.js 仅在 order 数组加 `'insight'` 一项（§3.2 授权的增量）。
 （角色徽章 + 依据 + 覆盖下拉 PUT /semantics + 重置 DELETE /semantics；角色覆盖后自动
 重拉 general-overview 刷新指标与发现）、主要发现、分析建议（zh+en 双 span，语言切换
 不重新请求）。推荐图表网格（批 3）与报告/AI 卡（批 4）按批次划分未在本批加入。
+
+
+## 10. 批 4 交付记录（2026-08-01）
+
+insight 屏补齐最后两块，路 2 的四批全部完成。纯前端接线，
+后端端点早已实现且未改动一行。
+
+**报告区**（`#ins-report-card`）
+- 调 `/api/{sid}/report`，**带 `mode` 参数**。此前前端只传 `language`，
+  `mode` 从未被使用过——也就是说通用报告与混合报告的两套结构
+  在浏览器里一直不可达。实测三种模式的章节结构确实不同：
+  general 七节 / survey 另七节 / mixed 合并十节。
+- 「生成预览」在卡内渲染，「下载 Markdown」走 `&download=true`。
+- 文件名与说明文字随当前模式变化（`sample_general_general_report.md`
+  ↔ `sample_general_survey_report.md`）。
+
+**AI 卡**（`#ins-ai-card`）
+- 调 `/api/{sid}/ai-report`，**body 传 `{mode, language}`**。
+  此前调用不传 body，后端因此永远走旧的问卷 prompt，三人设不可达。
+- 人设 pill 随模式切换：通用数据分析师 / 问卷分析师 / 混合数据分析师。
+
+**三态降级**（实测全部覆盖）
+
+| API 响应 | 界面 |
+| --- | --- |
+| `{ok:true, markdown}` | 渲染 markdown，无提示 |
+| `{ok:false, reason:"not_configured"}` | `.ins info`：说明如何配置 `.env`，并指出本页其余分析不受影响 |
+| `{ok:false, reason:"api_error"}` | `.ins warn`：调用失败，其余分析不受影响 |
+
+> **一处契约细节**：API 层用 `ok` / `reason: not_configured | api_error`，
+> 而 `src/ai_report` 内部常量是 `AI_STATUS_OK / NOT_CONFIGURED / FAILED`。
+> 两层词汇不同是有意的（`failed` 是内部状态，`api_error` 是对外原因），
+> 前端按**线上契约**匹配，不去猜内部常量名。
+
+**遵守的约束**：只改 `insight.js` 与 `index.html` 的增量插入，
+`data.js` 与现有六屏 DOM 一行未动；只用既有 design tokens
+（`--accent` / `--accent-soft` / `--accent-line` / `--muted` / `--r-sm`）与
+既有 class（`.card` / `.card-h` / `.btn` / `.pill` / `.ins` / `.doc`）。
+
+**验证注记**：本轮前端验证在 `127.0.0.1:5500` 完成。`localhost:5500` 上
+浏览器缓存了旧版 `insight.js`，强制刷新无效——两者是不同 origin，
+缓存独立。排查时若发现"磁盘上的代码是新的、页面行为是旧的"，先换 origin 再查逻辑。

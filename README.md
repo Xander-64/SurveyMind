@@ -1,5 +1,10 @@
 # SurveyMind
 
+[![tests](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml/badge.svg?branch=feature/general-data-platform)](https://github.com/XB-FakeItTillIPO/SurveyMind/actions/workflows/tests.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<!-- The tests badge is pinned to the working branch so it shows a real result
+     today. Drop the ?branch= parameter once this branch is merged to main. -->
+
 [简体中文说明](README.zh-CN.md)
 
 SurveyMind is a bilingual Streamlit-based AI-assisted data analysis platform. It analyzes both questionnaire exports and general tabular datasets (modeling data, business tables, logs): upload a CSV or Excel file and it detects the dataset mode, profiles every field, generates a data overview with quality checks and variable relationships, recommends charts and analyses, and exports a structured markdown report in either English or Chinese.
@@ -134,21 +139,44 @@ This makes it possible to correct edge cases without editing code.
 
 ```text
 surveymind/
-├── app.py
-├── requirements.txt
-├── README.md
-├── data/
-│   └── sample_survey.csv
+├── app.py                     Streamlit interface
+├── backend/main.py            FastAPI layer over src/ (thin: no analysis here)
+├── frontend/                  static SPA, no framework and no build step
+│   ├── index.html             screens + design tokens
+│   ├── data.js                data layer for the analysis screens
+│   └── assets/insight.js      data layer for the Smart Insights screen
 ├── src/
-│   ├── data_loader.py
-│   ├── question_type_detector.py
-│   ├── descriptive_analysis.py
-│   ├── visualization.py
-│   ├── cross_analysis.py
-│   └── report_generator.py
-├── outputs/
-│   └── sample_report.md
-└── assets/
+│   ├── survey_gen/            questionnaire generation
+│   │   ├── schema.py          Survey / Section / Question, JSON round trip
+│   │   ├── validator.py       methodology rules (23 checks, 34 rule ids)
+│   │   ├── vocabulary.py      word lists behind the wording rules
+│   │   ├── templates.py       built-in questionnaires, no API key needed
+│   │   ├── synthetic.py       responses from a schema, with ground truth
+│   │   ├── export.py          CSV template, sample, markdown, schema, codebook
+│   │   └── roundtrip.py       resolve recovered columns against the schema
+│   ├── report/                report layer, one module per output structure
+│   │   ├── survey.py          questionnaire report
+│   │   ├── general.py         general-dataset report
+│   │   ├── mixed.py           both, combined
+│   │   ├── dispatch.py        picks the structure for the active mode
+│   │   ├── common.py          shared formatting helpers
+│   │   └── llm_prompt.py      dataset summary + prompt builder
+│   ├── question_type_detector.py   five question types, scale hints, basis
+│   ├── field_semantics.py     eight generic field roles
+│   ├── dataset_mode.py        general / survey / mixed detection
+│   ├── general_overview.py    quality, correlations, group differences
+│   ├── analysis_suggestions.py / chart_recommender.py
+│   ├── descriptive_analysis.py / cross_analysis.py / visualization.py
+│   ├── preprocessing.py / data_loader.py / i18n.py
+│   └── llm_client.py / ai_report.py    optional AI layer, degrades cleanly
+├── tests/                     390 tests
+│   └── fixtures/              survey and detection fixtures
+├── docs/
+│   ├── detection-benchmark.md        scale vs count, and the end-to-end contrast
+│   ├── external-validity-check.md    validator vs a real professional instrument
+│   └── specs/                        design documents
+├── data/                      sample datasets
+└── .github/workflows/tests.yml
 ```
 
 ## How to Run Locally

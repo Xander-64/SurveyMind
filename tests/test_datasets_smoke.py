@@ -15,7 +15,6 @@ import pytest
 warnings.filterwarnings("ignore")
 app = pytest.importorskip("app")
 
-from src.cross_analysis import analyze_cross_relationship
 from src.descriptive_analysis import generate_descriptive_results
 from src.question_type_detector import detect_question_types
 from src.report_generator import generate_markdown_report

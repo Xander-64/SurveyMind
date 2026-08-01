@@ -1210,6 +1210,43 @@ table.dt .num-cell{font-variant-numeric:tabular-nums;}
             <div style="padding:14px;display:flex;flex-direction:column;gap:10px;" id="ins-suggestions"></div>
           </div>
         </div>
+
+        <!-- block 5a · mode-aware report -->
+        <div class="card mb15" id="ins-report-card" style="margin-top:15px;">
+          <div class="card-h">
+            <h3><span class="zh">分析报告</span><span class="en">Analysis Report</span><span class="alt zh">Analysis Report</span><span class="alt en">分析报告</span></h3>
+            <span class="sub mono" id="ins-report-name">report.md</span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12.5px;color:var(--muted);" id="ins-report-note">
+              <span class="zh">报告结构随当前数据模式变化。</span><span class="en">The report structure follows the active dataset mode.</span>
+            </span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn ghost" id="ins-report-preview"><span class="zh">生成预览</span><span class="en">Preview</span></button>
+              <button class="btn primary" id="ins-report-download"><span class="zh">下载 Markdown</span><span class="en">Download Markdown</span> ↓</button>
+            </div>
+            <div class="doc" id="ins-report-doc" style="display:none;max-height:340px;overflow:auto;"></div>
+          </div>
+        </div>
+
+        <!-- block 5b · AI interpretation -->
+        <div class="card" id="ins-ai-card">
+          <div class="card-h">
+            <h3><span class="zh">AI 智能解读</span><span class="en">AI Interpretation</span><span class="alt zh">AI Interpretation</span><span class="alt en">AI 智能解读</span></h3>
+            <span class="pill" id="ins-ai-persona"><span class="zh">—</span><span class="en">—</span></span>
+          </div>
+          <div style="padding:14px 17px;display:flex;flex-direction:column;gap:12px;">
+            <span style="font-size:12.5px;color:var(--muted);">
+              <span class="zh">AI 只解释本页已由 pandas / SciPy 计算出的统计结果，不接触原始数据。</span>
+              <span class="en">The AI only explains statistics already computed on this page with pandas / SciPy; it never sees the raw data.</span>
+            </span>
+            <div>
+              <button class="btn primary" id="ins-ai-run"><span class="zh">生成 AI 解读</span><span class="en">Generate interpretation</span></button>
+            </div>
+            <div id="ins-ai-status"></div>
+            <div class="doc" id="ins-ai-doc" style="display:none;max-height:340px;overflow:auto;"></div>
+          </div>
+        </div>
       </section>
 
     </main>

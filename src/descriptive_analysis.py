@@ -5,7 +5,6 @@ import pandas as pd
 from src.question_type_detector import (
     QUESTION_TYPE_MULTIPLE,
     QUESTION_TYPE_NUMERIC,
-    QUESTION_TYPE_OPEN,
     QUESTION_TYPE_SCALE,
     QUESTION_TYPE_SINGLE,
     split_multi_choice_response,
