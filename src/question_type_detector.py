@@ -266,6 +266,107 @@ def detect_scale_candidates(df: pd.DataFrame) -> dict[str, bool]:
     }
 
 
+# ---- detection basis --------------------------------------------------------
+# What the verdict rests on, not how likely it is to be right.
+#
+# Every branch of detect_question_type compares against a threshold, so a margin
+# is always computable. But a margin measures how firmly the rules fired, and
+# that is not the same thing as correctness: a 1-5 column named "满意度" and one
+# named "v7" produce identical value signals, and only one of them is a
+# defensible scale. Calling the second "high confidence" would be worse than
+# saying nothing.
+#
+# So this reports the *basis* — values, name, or a conflict between them — and
+# caps it at medium whenever the values alone fit more than one reading. The
+# levels are ordinal labels for a UI, never probabilities.
+
+BASIS_HIGH = "high"
+BASIS_MEDIUM = "medium"
+BASIS_LOW = "low"
+
+BASIS_USER = "user_override"
+BASIS_VALUES_AND_NAME = "values_and_name"
+BASIS_VALUES_CLEAR = "values_clear"
+BASIS_VALUES_ONLY = "values_only"
+BASIS_NEAR_BOUNDARY = "near_boundary"
+BASIS_SCALE_CANDIDATE = "scale_candidate"
+BASIS_NAME_DEMOTED = "name_demoted"
+BASIS_NO_DATA = "no_data"
+
+
+def _values_fit_more_than_one_reading(series: pd.Series) -> bool:
+    """True when the values are equally consistent with a scale and a count."""
+    values = _coerce_numeric_like_values(series.dropna()).dropna()
+    if values.empty:
+        return False
+    integer_ratio = ((values - values.round()).abs() < 1e-9).mean()
+    if integer_ratio < 0.99:
+        return False
+    minimum, maximum = values.min(), values.max()
+    if maximum - minimum > 10:
+        return False
+    observed = set(int(value) for value in values.unique())
+    return observed == set(range(int(minimum), int(maximum) + 1))
+
+
+def detection_basis(
+    series: pd.Series,
+    column_name: str | None = None,
+    active_type: str | None = None,
+    detected_type: str | None = None,
+) -> dict[str, str]:
+    """What this column's type rests on. Returns {"level", "code"}.
+
+    The two states where the detector declined to decide on its own —
+    a possible zero-based scale, and a demotion made on the column name —
+    are basis codes here rather than separate badges. They are, literally,
+    the basis for the verdict.
+    """
+    if active_type and detected_type and active_type != detected_type:
+        return {"level": BASIS_HIGH, "code": BASIS_USER}
+
+    resolved = active_type or detected_type or detect_question_type(
+        series, column_name=column_name
+    )
+    if resolved == QUESTION_TYPE_EMPTY:
+        return {"level": BASIS_LOW, "code": BASIS_NO_DATA}
+
+    if resolved == QUESTION_TYPE_NUMERIC:
+        if is_scale_candidate(series, column_name):
+            return {"level": BASIS_LOW, "code": BASIS_SCALE_CANDIDATE}
+        if scale_demotion_reason(series, column_name):
+            return {"level": BASIS_LOW, "code": BASIS_NAME_DEMOTED}
+
+    named = series if column_name is None else series.rename(column_name)
+    name_agrees = _column_name_suggests_scale(named) or _column_name_suggests_count(column_name)
+
+    if resolved in (QUESTION_TYPE_NUMERIC, QUESTION_TYPE_SCALE):
+        if name_agrees:
+            return {"level": BASIS_HIGH, "code": BASIS_VALUES_AND_NAME}
+        if _values_fit_more_than_one_reading(series):
+            return {"level": BASIS_MEDIUM, "code": BASIS_VALUES_ONLY}
+        return {"level": BASIS_HIGH, "code": BASIS_VALUES_CLEAR}
+
+    # Text branches: single / multiple / open all turn on a length or
+    # cardinality threshold, so report whether the call was a close one.
+    cleaned = series.replace(r"^\s*$", pd.NA, regex=True).dropna().astype(str).str.strip()
+    cleaned = cleaned[cleaned != ""]
+    if cleaned.empty:
+        return {"level": BASIS_LOW, "code": BASIS_NO_DATA}
+    sample_size = len(cleaned)
+    unique_count = cleaned.nunique()
+    average_length = cleaned.str.len().mean()
+    low_cardinality_limit = min(15, max(6, int(sample_size * 0.1)))
+    near = (
+        abs(unique_count - low_cardinality_limit) <= max(1, low_cardinality_limit * 0.2)
+        or abs(average_length - 40) <= 8
+        or abs(unique_count - 25) <= 3
+    )
+    if near:
+        return {"level": BASIS_MEDIUM, "code": BASIS_NEAR_BOUNDARY}
+    return {"level": BASIS_HIGH, "code": BASIS_VALUES_CLEAR}
+
+
 def detect_scale_demotions(df: pd.DataFrame) -> dict[str, str]:
     """Columns kept numeric because their name reads as a count."""
     reasons = {}

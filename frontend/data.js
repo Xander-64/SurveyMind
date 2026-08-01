@@ -362,21 +362,48 @@
       });
     });
 
-    /* The API marks numeric columns that could be a 0-10 style scale. It never
-       changes the type on its own: a count of purchases and an NPS rating look
-       identical in the data, and guessing wrong would have the report narrate
-       "3.2 purchases" as "a 3.2 rating". So the ambiguity is shown to the one
-       person who knows, and resolved through the existing override. */
-    function scaleHint(t) {
-      if (!t.scale_candidate) {
-        return '<span class="mono" style="font-size:11px;color:var(--muted)">—</span>';
+    /* The Basis column: what the verdict rests on, not how likely it is right.
+       A margin would say "high" for a 1-5 column named v7, which could just as
+       easily be a count of rooms — worse than saying nothing. So this reports
+       whether the call came from the values, the name, both, or a conflict.
+
+       The two states where the detector declined to decide on its own live
+       here as basis codes rather than separate badges, because that is
+       literally what they are: the basis. Both are actionable in place. */
+    var BASIS = {
+      values_and_name: { zh: "取值规律 + 列名一致", en: "Values and name agree" },
+      values_clear:    { zh: "取值形态明确",        en: "Values are unambiguous" },
+      values_only:     { zh: "仅取值规律，列名无信号", en: "Values only, name gives nothing" },
+      near_boundary:   { zh: "接近判定边界",        en: "Close to a threshold" },
+      user_override:   { zh: "已手动指定",          en: "Set by you" },
+      no_data:         { zh: "无有效数据",          en: "No usable data" },
+      scale_candidate: {
+        zh: "取值像 0-10 量表，列名无信号", en: "Looks like a 0-10 scale, name silent",
+        actZh: "改为量表题", actEn: "set as scale", to: "scale",
+      },
+      name_demoted: {
+        zh: "列名指向计数，已按此判定", en: "Name reads as a count, typed accordingly",
+        actZh: "改回量表题", actEn: "revert to scale", to: "scale",
+      },
+    };
+    var BASIS_DOT = { high: "var(--accent)", medium: "var(--ink-3)", low: "var(--warn)" };
+
+    function basisCell(t) {
+      var b = t.basis || { level: "medium", code: "values_only" };
+      var meta = BASIS[b.code] || BASIS.values_only;
+      var dot = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;' +
+        "background:" + (BASIS_DOT[b.level] || BASIS_DOT.medium) + ';margin-right:6px;' +
+        'vertical-align:middle;"></span>';
+      var text = '<span class="zh">' + esc(meta.zh) + '</span><span class="en">' + esc(meta.en) + "</span>";
+      if (!meta.to) {
+        return '<span style="font-size:11px;color:var(--ink-3);line-height:1.4;">' + dot + text + "</span>";
       }
-      return '<button class="sm-scale-hint" data-column="' + esc(t.column) + '" ' +
-        'style="border:1px solid var(--accent-line);background:var(--accent-soft);' +
-        'color:var(--accent);border-radius:var(--r-sm);padding:3px 8px;font-size:11px;' +
-        'cursor:pointer;line-height:1.3;text-align:left;">' +
-        '<span class="zh">可能是 0-10 量表 · 改为量表题</span>' +
-        '<span class="en">Might be a 0-10 scale &middot; set as scale</span></button>';
+      return '<button class="sm-basis-act" data-column="' + esc(t.column) + '" data-to="' + esc(meta.to) + '" ' +
+        'style="border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent);' +
+        'border-radius:var(--r-sm);padding:3px 8px;font-size:11px;cursor:pointer;line-height:1.35;' +
+        'text-align:left;">' + dot + text +
+        '<span style="opacity:.75;"> · <span class="zh">' + esc(meta.actZh) + '</span>' +
+        '<span class="en">' + esc(meta.actEn) + "</span></span></button>";
     }
 
     var tbody = screen.querySelector("table.dt tbody");
@@ -394,7 +421,7 @@
         '<td class="num-cell">' + (m.unique_values !== undefined ? m.unique_values : "—") + "</td>" +
         '<td class="num-cell"' + missStyle + ">" + fmtNum(missPct, 1) + "%</td>" +
         "<td>" + typeBadge(t.short) + "</td>" +
-        "<td>" + scaleHint(t) + "</td>" +
+        "<td>" + basisCell(t) + "</td>" +
         '<td style="text-align:right;"><span class="sel wide" style="justify-content:space-between"><span class="zh">' + esc(selLabel) +
         '</span><span class="en">' + esc(TYPE_EN[t.short]) + '</span><span class="car"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"></path></svg></span></span></td>' +
         "</tr>";
@@ -424,14 +451,17 @@
       selEl.value = t.short;
     });
 
-    /* accepting the hint is the same override the dropdown performs */
-    $all(".sm-scale-hint", tbody).forEach(function (btn) {
+    /* acting on a basis is the same override the dropdown performs */
+    $all(".sm-basis-act", tbody).forEach(function (btn) {
       btn.addEventListener("click", function () {
         if (!state.sessionId) return;
         api("/api/" + state.sessionId + "/types", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ column: btn.getAttribute("data-column"), type: "scale" }),
+          body: JSON.stringify({
+            column: btn.getAttribute("data-column"),
+            type: btn.getAttribute("data-to"),
+          }),
         }).then(loadAll).catch(showError);
       });
     });

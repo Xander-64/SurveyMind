@@ -64,6 +64,7 @@ from src.question_type_detector import (
     QUESTION_TYPE_SINGLE,
     detect_question_types,
     detect_scale_candidates,
+    detection_basis,
 )
 from src.report import (
     build_dataset_summary,
@@ -385,6 +386,7 @@ def _detect_payload(meta: dict, df: pd.DataFrame | None = None) -> dict:
     resolves it through the existing POST /types override.
     """
     candidates = detect_scale_candidates(df) if df is not None else {}
+    detected = meta.get("detected_types") or {}
     counts: dict[str, int] = {}
     types = []
     for column, q_type in meta["question_types"].items():
@@ -401,6 +403,16 @@ def _detect_payload(meta: dict, df: pd.DataFrame | None = None) -> dict:
                 # the question is settled and repeating the hint is noise.
                 "scale_candidate": bool(candidates.get(column, False))
                 and q_type == QUESTION_TYPE_NUMERIC,
+                # What the verdict rests on — values, name, or a conflict —
+                # rather than a probability the verdict is correct.
+                "basis": (
+                    detection_basis(
+                        df[column], column_name=column,
+                        active_type=q_type, detected_type=detected.get(column),
+                    )
+                    if df is not None and column in df.columns
+                    else {"level": "medium", "code": "values_only"}
+                ),
             }
         )
     return {"types": types, "counts": counts}

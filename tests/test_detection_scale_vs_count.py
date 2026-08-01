@@ -149,3 +149,60 @@ def test_ambiguous_columns_are_documented_as_undecidable():
     for spec in DATA["ambiguous"]:
         assert spec["why"], spec["name"]
         assert verdict(spec) in (QUESTION_TYPE_SCALE, QUESTION_TYPE_NUMERIC)
+
+
+# --------------------------------------------------------------------------
+# detection basis
+# --------------------------------------------------------------------------
+
+
+def test_basis_never_calls_an_undecidable_column_high():
+    """The failure mode this column exists to avoid.
+
+    A margin-based confidence would score v7 (1-5, opaque name) as high, since
+    every threshold is cleared comfortably — while the fixture records it as a
+    coin flip. Reporting the basis instead of a probability keeps all three
+    documented coin flips out of the top band.
+    """
+    from src.question_type_detector import detection_basis
+
+    for spec in DATA["ambiguous"]:
+        basis = detection_basis(column(spec), spec["name"])
+        assert basis["level"] in ("low", "medium"), (spec["name"], basis)
+
+
+def test_basis_reports_the_two_undecided_states_rather_than_a_score():
+    """scale_candidate and the name demotion are bases, not separate badges."""
+    from src.question_type_detector import detection_basis
+
+    zero_based = next(s for s in DATA["scales"] if s["name"] == "推荐意愿")
+    assert detection_basis(column(zero_based), zero_based["name"]) == {
+        "level": "low", "code": "scale_candidate"}
+
+    demoted = next(s for s in DATA["counts"] if s["name"] == "家庭人口数")
+    assert detection_basis(column(demoted), demoted["name"]) == {
+        "level": "low", "code": "name_demoted"}
+
+
+def test_basis_is_high_only_when_values_and_name_agree_or_shape_is_plain():
+    from src.question_type_detector import detection_basis
+
+    agree = next(s for s in DATA["scales"] if s["name"] == "满意度")
+    assert detection_basis(column(agree), agree["name"]) == {
+        "level": "high", "code": "values_and_name"}
+
+    silent = next(s for s in DATA["scales"] if s["name"] == "同意程度")
+    assert detection_basis(column(silent), silent["name"]) == {
+        "level": "medium", "code": "values_only"}
+
+
+def test_a_user_override_becomes_its_own_basis():
+    """Once the person who knows has decided, the basis is that decision."""
+    from src.question_type_detector import detection_basis
+
+    spec = next(s for s in DATA["counts"] if s["name"] == "家庭人口数")
+    basis = detection_basis(
+        column(spec), spec["name"],
+        active_type=QUESTION_TYPE_SCALE, detected_type=QUESTION_TYPE_NUMERIC,
+    )
+    assert basis == {"level": "high", "code": "user_override"}
