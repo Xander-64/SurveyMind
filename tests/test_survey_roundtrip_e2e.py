@@ -224,18 +224,54 @@ def test_path_b_construct_scores_become_computable(survey, responses):
 def test_path_b_reverse_keyed_items_are_flipped_using_the_declaration(survey, responses):
     """Which items are reverse-keyed is not recoverable from the CSV.
 
-    srv_wait is worded negatively, so its raw values run opposite to the rest of
-    its construct. Recoding it is only possible because the schema says to.
+    srv_wait is worded negatively, so its raw values run against the rest of its
+    construct. Recoding it is possible only because the schema says to.
+
+    The item is compared against the other three directly rather than against
+    the construct score. The construct score contains those same three items, so
+    correlating the two would be high whatever the recoding did — an earlier
+    version of this test made that mistake and was measuring component overlap.
     """
     frame, _ = responses
+    spec = survey.question_by_id("Q05").scale_spec
     raw = pd.to_numeric(frame["srv_wait"])
-    positives = pd.DataFrame(
+    others = pd.DataFrame(
         {code: pd.to_numeric(frame[code]) for code in ("srv_response", "srv_resolve", "srv_respect")}
     ).mean(axis=1)
-    assert raw.corr(positives) < 0.2
 
-    recoded = construct_scores(frame, survey)["c_service"]
-    assert recoded.corr(positives) > 0.5
+    # Raw, the item runs backwards against its own construct.
+    assert raw.corr(others) < -0.3
+
+    # Recoded from the declaration, it runs with it. Same magnitude, flipped.
+    recoded = spec.min_value + spec.max_value - raw
+    assert recoded.corr(others) > 0.3
+    assert recoded.corr(others) == pytest.approx(-raw.corr(others), abs=1e-9)
+
+
+def test_synthetic_construct_items_actually_share_a_factor(survey, responses):
+    """Guards the generator, not the pipeline.
+
+    Items in one construct have to correlate, or the data is independent columns
+    wearing a construct label and every reliability number computed from it is
+    meaningless. An earlier version of the generator documented a latent factor
+    it did not implement, which produced an alpha near zero.
+    """
+    frame, _ = responses
+    for construct_id in ("c_service", "c_value"):
+        codes = [
+            question.code
+            for question in survey.questions_for_construct(construct_id)
+            if question.question_type == QUESTION_TYPE_SCALE and not question.reverse_coded
+        ]
+        block = pd.DataFrame({code: pd.to_numeric(frame[code]) for code in codes})
+        correlations = block.corr().values
+        off_diagonal = [
+            correlations[i][j]
+            for i in range(len(codes))
+            for j in range(len(codes))
+            if i != j
+        ]
+        assert min(off_diagonal) > 0.15, (construct_id, off_diagonal)
 
 
 def test_path_b_records_the_capability_gap_rather_than_hiding_it(survey, responses):

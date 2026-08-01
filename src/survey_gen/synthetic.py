@@ -13,6 +13,7 @@ reproduces something a real platform export actually does to the data.
 """
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass
 
@@ -102,16 +103,47 @@ class NoiseProfile:
     straightliner_ratio: float = 0.0
 
 
-def _scale_values(question: Question, n: int, rng: random.Random) -> list:
+def _latent_scores(survey: Survey, n: int, rng: random.Random) -> dict[str, list[float]]:
+    """One standardised latent score per respondent per construct.
+
+    Items in a construct have to share something, or the data is not a
+    questionnaire at all — it is independent columns wearing a construct label.
+    Reliability computed over independent items lands near zero, and a test that
+    accepted that would be certifying noise.
+    """
+    ids = [construct.construct_id for construct in survey.constructs]
+    return {cid: [rng.gauss(0.0, 1.0) for _ in range(n)] for cid in ids}
+
+
+def _scale_values(
+    question: Question,
+    n: int,
+    rng: random.Random,
+    latents: dict[str, list[float]],
+    item_noise: float = 0.55,
+) -> list:
+    """Item response = the respondent's latent score plus item-specific noise.
+
+    ``item_noise`` is the share of an item's variance that is its own rather
+    than the construct's. At 0.55 the items correlate enough for alpha to land
+    in a realistic range instead of at a ceiling, which keeps the reliability
+    output worth reading.
+
+    Reverse-keyed items are flipped last, exactly as a real instrument does, so
+    their raw values run against the rest of the construct until something
+    recodes them.
+    """
     spec = question.scale_spec
-    low = spec.min_value
-    high = spec.max_value
-    # A latent tendency per respondent so items in one construct correlate,
-    # which is what makes reliability meaningful rather than noise.
+    low, high = spec.min_value, spec.max_value
+    centre = (low + high) / 2
+    spread = (high - low) / 4 or 1
+    latent = latents.get(question.construct_id)
+
     values = []
-    for _ in range(n):
-        centre = (low + high) / 2
-        drawn = rng.gauss(centre, (high - low) / 4 or 1)
+    for index in range(n):
+        shared = latent[index] if latent is not None else rng.gauss(0.0, 1.0)
+        score = shared * (1 - item_noise) + rng.gauss(0.0, 1.0) * item_noise
+        drawn = centre + score * spread / math.sqrt((1 - item_noise) ** 2 + item_noise ** 2)
         values.append(int(min(high, max(low, round(drawn)))))
     if question.reverse_coded:
         values = [low + high - value for value in values]
@@ -159,6 +191,7 @@ def generate_responses(
     """
     noise = noise or NoiseProfile()
     rng = random.Random(seed)
+    latents = _latent_scores(survey, n_respondents, rng)
     delimiters = [";", "，", "、", "/"] if noise.delimiter_mix else [";"]
 
     columns: dict[str, list] = {}
@@ -166,7 +199,7 @@ def generate_responses(
 
     for _, question in survey.iter_questions():
         if question.question_type == QUESTION_TYPE_SCALE:
-            values = _scale_values(question, n_respondents, rng)
+            values = _scale_values(question, n_respondents, rng, latents)
             if noise.scale_as_text:
                 values = ["%d分" % value for value in values]
         elif question.question_type == QUESTION_TYPE_SINGLE:
